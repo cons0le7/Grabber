@@ -20,7 +20,7 @@ This will:
 - Create a tunnel to expose your server to the web with serveo.
 - Output a link where the server can be accessed.
 
-Set admin login credentials by editing lines 10 & 12 in `server3.js`. Copy the link and send to test device. 
+Set admin login credentials by editing lines 10 & 11 in `server3.js`. Copy the link and send to test device. 
 
 From test device: 
 - Accept location permissions
