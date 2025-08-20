@@ -6,7 +6,8 @@ Data can be accessed via web by accessing servio link with `/admin`. logged publ
 
 ## Install: 
 ```
-apk add git nodejs npm python3 py3-pip openssh
+apk add git nodejs npm python3 py3-pip openssh make g++
+npm install bycryptjs
 git clone https://github.com/cons0le7/Grabber
 ```
 ## How to use:  
