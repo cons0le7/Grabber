@@ -10,6 +10,7 @@ apk add git nodejs npm python3 py3-pip openssh
 git clone https://github.com/cons0le7/Grabber
 ```
 ## How to use:  
+- Set admin login credentials by editing lines 10 & 11 in `server3.js`. Default credentials are user: `admin` pass: `supersecret`.
 - cd to clone directory and run grab.py: 
 ```
 cd Grabber
@@ -20,7 +21,7 @@ This will:
 - Create a tunnel to expose your server to the web with serveo.
 - Output a link where the server can be accessed.
 
-Set admin login credentials by editing lines 10 & 11 in `server3.js`. Copy the link and send to test device. 
+Copy the link and send to test device. 
 
 From test device: 
 - Accept location permissions
