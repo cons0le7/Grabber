@@ -15,18 +15,25 @@ git clone https://github.com/cons0le7/Grabber
 cd Grabber
 python3 pass.py
 ```
-credentials are salted and hashed with scrypt and stored in `config.json`
+credentials are salted and hashed with scrypt and stored in `config.json` 
+
+For additional security you can remove this file from server directory or delete it and restore it if needed to change authentication later. 
 
 - cd to clone directory and run grab.py: 
 ```
 python3 grab.py
 ```
 This will: 
+- Kill any existing processes on port 3000.
+- 
+- Ask if you want to use a URL shortener and provide 3 options if you choose so. 
 - Start the server on `http://localhost:3000`
 - Create a tunnel to expose your server to the web with serveo.
 - Output a link where the server can be accessed.
 
-Copy the link and send to test device. 
+
+Copy the link and send to test device.
+Ctrl+C twice to shutdown.
 
 From test device: 
 - Accept location permissions
