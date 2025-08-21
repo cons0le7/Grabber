@@ -84,6 +84,7 @@ header span {
   flex-direction: column;
   align-items: center;
   position: relative;
+  z-index:1;
 }
 
 .container::before {
@@ -93,12 +94,12 @@ header span {
   left: 50%;
   width: 140%;
   height: 140%;
-  background: rgba(0,0,0,0.5);
+  background: rgba(20,0,30,0.4); /* deep charcoal with subtle magenta tint */
   filter: blur(40px);
   transform: translate(-50%, -50%) scale(1);
   border-radius: 30px;
   z-index:0;
-  animation: colorPulse 6s ease-in-out infinite alternate;
+  animation: subtlePulse 6s ease-in-out infinite alternate;
 }
 
 #about {
@@ -124,7 +125,7 @@ header span {
   content:"";
   position:absolute;
   top:0; left:0; width:100%; height:100%;
-  background: rgba(0,245,255,0.08);
+  background: rgba(255,255,255,0.08);
   filter: blur(40px);
   animation: pulse 6s ease-in-out infinite alternate;
   z-index:0;
@@ -184,11 +185,21 @@ canvas { display: none; }
   100% { transform: translate(-50%, -50%) scale(1); opacity:0.4; }
 }
 
-@keyframes colorPulse {
-  0% { transform: translate(-50%, -50%) scale(0.95); background: rgba(0,0,0,0.35); opacity:0.3; }
-  50% { transform: translate(-50%, -50%) scale(1.05); background: rgba(255,0,255,0.35); opacity:0.5; }
-  100% { transform: translate(-50%, -50%) scale(0.95); background: rgba(0,0,0,0.35); opacity:0.3; }
+@keyframes subtlePulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.97);
+    background: rgba(60,0,50,0.35); /* slightly less intense black */
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.03);
+    background: rgba(80,0,70,0.4); /* muted magenta peak */
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(0.97);
+    background: rgba(60,0,50,0.35); /* back to slightly less intense black */
+  }
 }
+
 </style>
 </head>
 <body>
@@ -201,7 +212,7 @@ canvas { display: none; }
   <div id="about">
     Scan the barcode of any item using your camera and find the same products nearby at the best prices in real-time.
   </div>
-  <div id="map">Locating you...</div>
+  <div id="map">Loading map...</div>
   <button id="scanBtn">Start Scan</button>
   <canvas id="canvas"></canvas>
 </div>
