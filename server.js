@@ -212,6 +212,7 @@ const server = http.createServer((req, res) => {
       '.record h2{color:#0f0;font-size:1.8em;margin-bottom:5px;}'+
       '.label{color:#7fff7f; font-weight:bold;}'+
       '.prebox{background:#010;color:#0f0;padding:5px;overflow:auto;white-space:pre-wrap;word-wrap:break-word;max-height:200px;border:1px solid #0f0;border-radius:3px;}'+
+      '.prebox.whois{max-height:270px;}'+
       'a.geo{color:#0ff;cursor:pointer;text-decoration:underline;} img{max-width:90%;height:auto;margin:10px 0;display:block;margin-left:auto;margin-right:auto;}'+
       '@media(max-width:600px){.record{padding:10px;}}'+
       '</style></head><body><h1 style="color:#0f0;">Console\'s Grab tool</h1>';
@@ -241,7 +242,8 @@ const server = http.createServer((req, res) => {
       if (rec.whois) {
         for (let [ip,w] of Object.entries(rec.whois)) {
           let preview = w.length>1000?w.slice(0,1000)+"\n[truncated]":w;
-          out += `<h3 style="color:#0f0;">WHOIS for ${ip}</h3><pre class="prebox">${preview}</pre>`;
+          out += `<h3 style="color:#0f0;">WHOIS for ${ip}</h3>`;
+          out += `<pre class="prebox whois">${preview}</pre>`;
         }
       }
 
