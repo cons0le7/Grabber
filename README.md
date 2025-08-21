@@ -17,7 +17,7 @@ python3 pass.py
 ```
 credentials are salted and hashed with scrypt and stored in `config.json` 
 
-For additional security you can remove this file from server directory or delete it and restore it if needed to change authentication later. 
+For additional security you can remove `pass.py` from server directory or delete it and restore it if needed to change authentication later. 
 
 - cd to clone directory and run grab.py: 
 ```
