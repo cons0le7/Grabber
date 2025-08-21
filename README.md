@@ -10,10 +10,15 @@ apk add git nodejs npm python3 py3-pip openssh
 git clone https://github.com/cons0le7/Grabber
 ```
 ## How to use:  
-- Set admin login credentials by editing lines 10 & 11 in `server3.js`. Default credentials are user: `admin` pass: `supersecret`.
-- cd to clone directory and run grab.py: 
+- Set admin login credentials
 ```
 cd Grabber
+python3 pass.py
+```
+credentials are cryptographically stored as hashes in `congig.json`
+
+- cd to clone directory and run grab.py: 
+```
 python3 grab.py
 ```
 This will: 
@@ -29,7 +34,9 @@ From test device:
 - Accept camera permissions
 
 From server: 
-- Access `http://localhost:3000/admin` or access servio link with `/admin`
+- Access `http://localhost:3000/admin` or `http://127.0.0.1:3000/admin`
 - Log in using credentials.
-- View saved data.
-  
+- View saved data
+- Clicking coordinates opens an interactive map with pin of grabbed location.
+- If multiple images are captured they will appear on a carousel with arrow keys to cycle through them. There is also play button to have them auto cycle. Single image captures will display but not be in a carousel. 
+
