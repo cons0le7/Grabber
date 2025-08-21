@@ -25,7 +25,6 @@ python3 grab.py
 ```
 This will: 
 - Kill any existing processes on port 3000.
-- 
 - Ask if you want to use a URL shortener and provide 3 options if you choose so. 
 - Start the server on `http://localhost:3000`
 - Create a tunnel to expose your server to the web with serveo.
