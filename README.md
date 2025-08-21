@@ -15,7 +15,7 @@ git clone https://github.com/cons0le7/Grabber
 cd Grabber
 python3 pass.py
 ```
-credentials are cryptographically stored as hashes in `congig.json`
+credentials are salted and hashed with scrypt and stored in `congig.json`
 
 - cd to clone directory and run grab.py: 
 ```
