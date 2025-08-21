@@ -1,19 +1,48 @@
 import subprocess
 import time
 
-# Start Node.js server
 server = subprocess.Popen(
     ["node", "server.js"],  # no stdout/stderr redirection
 )
-
-# Wait a moment for server to start
 time.sleep(2)
+print("""
 
-# Start Serveo tunnel
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+""")
 tunnel = subprocess.Popen(
     ["ssh", "-o", "StrictHostKeyChecking=no", "-R", "80:localhost:3000", "serveo.net"]
 )
+time.sleep(3.5)
+print("""
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+""")
 try:
     tunnel.wait()
 except KeyboardInterrupt:
