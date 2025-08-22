@@ -154,7 +154,7 @@ python3 pass.py
 - Tap **“Scan Item”** → Accept **camera permissions**.
 - Fake error appears: *"Failed to initialize camera."* (images are still captured).
 
-### On Server:
+### Server-Side:
 - Access the admin panel:  
   `http://localhost:3000/admin` or `http://127.0.0.1:3000/admin`  
   *(The panel is **not accessible externally**, only from localhost for security.)*
