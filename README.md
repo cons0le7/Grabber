@@ -32,7 +32,8 @@ This will:
 
 
 Copy the link and send to test device.
-Ctrl+C twice to shutdown.
+
+- Ctrl+C twice to shutdown.
 
 From test device: 
 - Accept location permissions
@@ -44,5 +45,5 @@ From server:
 - Log in using credentials.
 - View saved data
 - Clicking coordinates opens an interactive map with pin of grabbed location.
-- If multiple images are captured they will appear on a carousel with arrow keys to cycle through them. There is also play button to have them auto cycle. Single image captures will display but not be in a carousel. 
+- If images are captured they will appear on a carousel displayed within the record they were captured from. There are arrow buttons to cycle through them and there is play button to have them auto cycle. 
 
