@@ -2,6 +2,8 @@
 
 ![Node.js](https://img.shields.io/badge/Node.js-16%2B-green)
 ![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Educational Use Only](https://img.shields.io/badge/Educational-Use%20Only-red)
 
 ---
 
@@ -24,7 +26,9 @@ This tool is **NOT** intended for malicious use. The author takes **no responsib
 - [🛠 Usage Flow](#-usage-flow)
 - [📂 Data Storage](#-data-storage)
 - [📁 Project Structure](#-project-structure)
+- [⚖️ Legal / Educational Use Only](#-legal--educational-use-only)
 - [⚠️ Disclaimer](#-disclaimer)
+- [📜 License](#-license)
 
 ---
 
@@ -153,7 +157,6 @@ python3 pass.py
   *(The panel is **not accessible externally**, only from localhost for security.)*
 - Log in using your credentials.
 - View:
-  
   ✔ Collected IP info with WHOIS  
   ✔ Click coordinates → Opens interactive map  
   ✔ Captured images → Carousel with navigation & autoplay  
@@ -181,7 +184,19 @@ Grabber/
 
 ---
 
-## ⚠️ Disclaimer ⚠️
-This tool is **strictly for educational purposes**.  
-Do **NOT** use it against individuals or systems without **explicit consent**.  
-The author assumes **no liability** for any misuse, legal consequences, or damage.  
+## ⚖️ Legal / Educational Use Only
+- This software is **strictly for educational, research, or demonstration purposes**.
+- **Do not use this tool to target real individuals or systems without explicit consent.**
+- By using Grabber, you **agree not to engage in illegal or unethical activities**.
+- The author **does not endorse or facilitate malicious use** and **assumes no liability** for misuse.
+
+---
+
+## ⚠️ Disclaimer
+This tool is provided **“as-is”**.  
+The authors are **not responsible for any damages, legal issues, or misuse** arising from the use of this software.  
+
+---
+
+## 📜 License
+MIT License. See [LICENSE](LICENSE) for details.
