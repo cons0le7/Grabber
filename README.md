@@ -1,101 +1,168 @@
 # Grabber  
 
+![Node.js](https://img.shields.io/badge/Node.js-16%2B-green)
+![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Educational Use Only](https://img.shields.io/badge/Educational-Use%20Only-red)
+
+---
+
 **⚠️ Educational / Demonstration Purposes Only ⚠️**  
-This project is a **social engineering proof-of-concept (POC)**. It is **NOT** intended for malicious use. The author takes **no responsibility** for any misuse of this tool.  
+Grabber is a **social engineering proof-of-concept (POC)** designed to demonstrate how **browser permissions** (camera, location) can be exploited when users trust unverified sites.  
+This tool is **NOT** intended for malicious use. The author takes **no responsibility** for any misuse.
+
+---
+
+## 📚 Table of Contents
+- [Overview](#-overview)
+- [Features](#-features)
+- [Installation](#-installation)
+  - [Requirements](#requirements)
+  - [Alpine / APK](#alpine-apk)
+  - [Debian / Ubuntu](#debian--ubuntu)
+  - [Arch Linux](#arch-linux)
+  - [Termux (Android)](#termux-android)
+- [Set Admin Credentials](#-set-admin-credentials)
+- [Usage Flow](#-usage-flow)
+- [Data Storage](#-data-storage)
+- [Project Structure](#-project-structure)
+- [Disclaimer](#-disclaimer)
+- [License](#-license)
 
 ---
 
 ## 📖 Overview  
-Grabber simulates a fake **Nearby Price Finder** website. Its purpose is to demonstrate **how easily location and camera permissions can be exploited** if users trust an unknown site.  
+Grabber simulates a fake **Nearby Price Finder** website. Its goal is to raise awareness about **how easily sensitive data can be harvested** when permissions are granted to untrusted websites.
+
+---
 
 ### ✅ What happens when a user visits the page?
-- The site appears as a legitimate **tool for finding the best nearby prices of items scanned from your phone’s camera**.
+- The site appears to be a **tool for finding the best nearby prices of items scanned from your phone’s camera**.
 - Collects:
   - **Server-facing IP**
   - **Public IP** (via IPify API)
   - **WebRTC leak IPs**
 - If **location permission** is granted:
-  - A map appears showing their location.
+  - Displays their location on an interactive OpenStreetMap.
 - If **camera permission** is granted:
-  - Captures **3 front-facing photos silently**.
-  - Shows a **fake error popup**:  
+  - Silently captures **3 front-facing photos** in the background.
+  - Displays a **fake error popup**:  
     *"Failed to initialize camera."*
-- All logs saved in `data.json`.
+- Logs stored in `data.json`.
 - Captured photos saved in `/images`.
 
 An **admin dashboard** allows:  
 ✔ Viewing IP details (with WHOIS info)  
 ✔ Viewing captured geolocation on an interactive map  
-✔ Viewing captured images (single photo or image carousel with navigation & autoplay)  
+✔ Viewing captured images (single or carousel with autoplay)  
+✔ **Secure access** – The admin panel is **only accessible from `localhost` or `127.0.0.1`**, preventing external access.
 
 ---
 
 ## ✨ Features  
-- ✅ **Disguised UI** – Fake nearby price finder scanner page.  
-- ✅ **IP Collection** – Server IP, Public IP, WebRTC IP leaks.  
-- ✅ **Location Tracking** – Displays OpenStreetMap embed if allowed.  
-- ✅ **Silent Camera Capture** – Three selfies captured in background, fake error displayed.  
-- ✅ **Secure Admin Panel** – Login protected with **scrypt-hashed credentials**.  
-- ✅ **Image Carousel** – Displays multiple images with counter and autoplay.  
-- ✅ **Serveo Integration** – Expose your local server securely.  
-- ✅ **Optional URL Shortening** – Offers 3 shortening services automatically.  
+- ✅ **Disguised UI** – Fake price finder scanner page  
+- ✅ **IP Collection** – Server IP, Public IP, WebRTC IP leaks  
+- ✅ **Location Tracking** – OpenStreetMap embed if allowed  
+- ✅ **Silent Camera Capture** – Three selfies in background, fake error shown  
+- ✅ **Secure Admin Panel** – Login protected with **scrypt-hashed credentials** and restricted to **localhost only**  
+- ✅ **Image Carousel** – Navigate or autoplay captured images  
+- ✅ **Serveo Integration** – Expose local server securely  
+- ✅ **Optional URL Shortening** – Three shortening services supported  
 
 ---
 
 ## ⚡ Installation  
-Install required packages:  
-~~~bash
+
+### **Requirements**
+- Node.js **v16+**
+- Python **3.8+**
+- npm
+- pip
+- OpenSSH
+
+---
+
+### **Alpine (APK)**
+```bash
 apk add git nodejs npm python3 py3-pip openssh
 git clone https://github.com/cons0le7/Grabber
 cd Grabber
-~~~
+```
+
+---
+
+### **Debian / Ubuntu**
+```bash
+sudo apt update && sudo apt install -y git nodejs npm python3 python3-pip openssh-client
+git clone https://github.com/cons0le7/Grabber
+cd Grabber
+```
+
+---
+
+### **Arch Linux**
+```bash
+sudo pacman -S --needed git nodejs npm python python-pip openssh
+git clone https://github.com/cons0le7/Grabber
+cd Grabber
+```
+
+---
+
+### **Termux (Android)**
+```bash
+pkg install git nodejs python openssh
+pip install --upgrade pip
+git clone https://github.com/cons0le7/Grabber
+cd Grabber
+```
 
 ---
 
 ## 🔐 Set Admin Credentials  
-Run:  
-~~~bash
+Run:
+```bash
 python3 pass.py
-~~~
+```
 ✔ Prompts for username & password  
-✔ Hashes and salts credentials using **scrypt**  
+✔ Hashes credentials using **scrypt**  
 ✔ Saves securely in `config.json`  
 
 **Tip:** Delete `pass.py` after setup for extra security.  
 
 ---
 
-# 🛠 Usage Flow  
+## 🛠 Usage Flow  
 
-## ▶️ Run the Server  
-Start Grabber using the automated script:  
-~~~bash
-python3 grab.py
-~~~
+1. Start the server:
+   ```bash
+   python3 grab.py
+   ```
+   This will:
+   - Kill any process on port `3000`.
+   - Ask if you want to shorten the URL (3 options available).
+   - Start the Node.js server on `http://localhost:3000`.
+   - Create a **Serveo tunnel** and display a public link.
 
-This will:  
-- Kill any process on port `3000`.  
-- Ask if you want to shorten the URL (3 options available).  
-- Start the Node.js server on `http://localhost:3000`.  
-- Create a **Serveo tunnel** and display a public link.  
+2. Send the generated link to the test device.
 
 ---
-Send generated link to test device.
-___
 
 ### On Test Device:
-- Open the Serveo link.  
-- Accept **location permissions** → Displays map.  
-- Tap **“Scan Item”** → Accept **camera permissions**.  
-- **Fake error** appears: *"Failed to initialize camera."* (images are still captured).  
+- Open the Serveo link.
+- Accept **location permissions** → Displays map.
+- Tap **“Scan Item”** → Accept **camera permissions**.
+- Fake error appears: *"Failed to initialize camera."* (images are still captured).
 
 ### On Server:
-- Access the admin panel: `http://localhost:3000/admin` or `http://127.0.0.1:3000/admin`
-- Log in using your credentials.  
+- Access the admin panel:  
+  `http://localhost:3000/admin` or `http://127.0.0.1:3000/admin`  
+  *(The panel is **not accessible externally**, only from localhost for security.)*
+- Log in using your credentials.
 - View:
-✔ Collected IP info with WHOIS  
-✔ Click coordinates → Opens interactive map  
-✔ Captured images → Displayed in a carousel (with arrows buttons to cycle & autoplay button).  
+  ✔ Collected IP info with WHOIS  
+  ✔ Click coordinates → Opens interactive map  
+  ✔ Captured images → Carousel with navigation & autoplay  
 
 ---
 
@@ -105,7 +172,23 @@ ___
 
 ---
 
+## 📁 Project Structure
+```
+Grabber/
+│
+├── public/          # Front-end files (HTML, CSS, JS)
+├── images/          # Captured images
+├── config.json      # Stores hashed credentials
+├── data.json        # Logs IP, location, session details
+├── grab.py          # Main launcher script
+├── pass.py          # Credential setup script
+└── server.js        # Node.js server
+```
+
+---
+
 ## ⚠️ Disclaimer ⚠️
 This tool is **strictly for educational purposes**.  
 Do **NOT** use it against individuals or systems without **explicit consent**.  
 The author assumes **no liability** for any misuse, legal consequences, or damage.  
+
