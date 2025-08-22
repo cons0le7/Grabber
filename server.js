@@ -292,7 +292,7 @@ const server = http.createServer((req, res) => {
 
         btnNext.addEventListener('click',()=>{ next(); pause(); });
         btnPrev.addEventListener('click',()=>{ prev(); pause(); });
-        function play(){ if(playing) return; playing=true; btnPlay.textContent='⏸'; timer=setInterval(next, interval); }
+        function play(){ if(playing) return; playing=true; btnPlay.textContent='■'; timer=setInterval(next, interval); }
         function pause(){ if(!playing) return; playing=false; btnPlay.textContent='▶'; clearInterval(timer); }
         btnPlay.addEventListener('click',()=>playing?pause():play());
         show(idx);
