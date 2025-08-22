@@ -2,8 +2,6 @@
 
 ![Node.js](https://img.shields.io/badge/Node.js-16%2B-green)
 ![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-![Educational Use Only](https://img.shields.io/badge/Educational-Use%20Only-red)
 
 ---
 
