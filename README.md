@@ -91,3 +91,21 @@ Send this link to the **test device**.
 
 ### On Server:
 - Access the admin panel: `http://localhost:3000/admin` or `http://127.0.0.1:3000/admin`
+- Log in using your credentials.  
+- View:
+✔ Collected IP info with WHOIS  
+✔ Click coordinates → Opens interactive map  
+✔ Captured images → Displayed in a carousel (with arrows buttons to cycle & autoplay button).  
+
+---
+
+## 📂 Data Storage  
+- **Captured images:** `/images`  
+- **All session data:** `data.json`  
+
+---
+
+## ⚠️ Disclaimer ⚠️
+This tool is **strictly for educational purposes**.  
+Do **NOT** use it against individuals or systems without **explicit consent**.  
+The author assumes **no liability** for any misuse, legal consequences, or damage.  
