@@ -14,20 +14,20 @@ This tool is **NOT** intended for malicious use. The author takes **no responsib
 ---
 
 ## 📚 Table of Contents
-- [Overview](#-overview)
-- [Features](#-features)
-- [Installation](#-installation)
+- [📖 Overview](#-overview)
+- [✨ Features](#-features)
+- [⚡ Installation](#-installation)
   - [Requirements](#requirements)
-  - [iOS / iSH (Alpine)](#alpine-apk)
   - [Debian / Ubuntu](#debian--ubuntu)
   - [Arch Linux](#arch-linux)
-  - [Android (Termux)](#termux-android)
-- [Set Admin Credentials](#-set-admin-credentials)
-- [Usage Flow](#-usage-flow)
-- [Data Storage](#-data-storage)
-- [Project Structure](#-project-structure)
-- [Disclaimer](#-disclaimer)
-- [License](#-license)
+  - [Android (Termux)](#android-termux)
+  - [iOS / iSH (Alpine)](#ios--ish-alpine)
+- [🔐 Set Admin Credentials](#-set-admin-credentials)
+- [🛠 Usage Flow](#-usage-flow)
+- [📂 Data Storage](#-data-storage)
+- [📁 Project Structure](#-project-structure)
+- [⚠️ Disclaimer](#-disclaimer)
+- [📜 License](#-license)
 
 ---
 
@@ -115,7 +115,6 @@ git clone https://github.com/cons0le7/Grabber
 
 ---
 
-
 ## 🔐 Set Admin Credentials  
 `cd Grabber` then:
 ```bash
@@ -188,4 +187,3 @@ Grabber/
 This tool is **strictly for educational purposes**.  
 Do **NOT** use it against individuals or systems without **explicit consent**.  
 The author assumes **no liability** for any misuse, legal consequences, or damage.  
-
