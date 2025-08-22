@@ -18,10 +18,10 @@ This tool is **NOT** intended for malicious use. The author takes **no responsib
 - [Features](#-features)
 - [Installation](#-installation)
   - [Requirements](#requirements)
-  - [Alpine / APK](#alpine-apk)
+  - [iOS / iSH (Alpine)](#alpine-apk)
   - [Debian / Ubuntu](#debian--ubuntu)
   - [Arch Linux](#arch-linux)
-  - [Termux (Android)](#termux-android)
+  - [Android (Termux)](#termux-android)
 - [Set Admin Credentials](#-set-admin-credentials)
 - [Usage Flow](#-usage-flow)
 - [Data Storage](#-data-storage)
@@ -82,14 +82,6 @@ An **admin dashboard** allows:
 
 ---
 
-### **iOS devices using iSH / Alpine **
-```bash
-apk add git nodejs npm python3 py3-pip openssh
-git clone https://github.com/cons0le7/Grabber
-```
-
----
-
 ### **Debian / Ubuntu**
 ```bash
 sudo apt update && sudo apt install -y git nodejs npm python3 python3-pip openssh-client
@@ -114,6 +106,15 @@ git clone https://github.com/cons0le7/Grabber
 ```
 
 ---
+
+### **iOS / iSH (Alpine)**
+```bash
+apk add git nodejs npm python3 py3-pip openssh
+git clone https://github.com/cons0le7/Grabber
+```
+
+---
+
 
 ## 🔐 Set Admin Credentials  
 `cd Grabber` then:
