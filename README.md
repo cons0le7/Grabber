@@ -82,11 +82,10 @@ An **admin dashboard** allows:
 
 ---
 
-### **Alpine (APK)**
+### **iOS devices using iSH / Alpine **
 ```bash
 apk add git nodejs npm python3 py3-pip openssh
 git clone https://github.com/cons0le7/Grabber
-cd Grabber
 ```
 
 ---
@@ -95,7 +94,6 @@ cd Grabber
 ```bash
 sudo apt update && sudo apt install -y git nodejs npm python3 python3-pip openssh-client
 git clone https://github.com/cons0le7/Grabber
-cd Grabber
 ```
 
 ---
@@ -104,23 +102,21 @@ cd Grabber
 ```bash
 sudo pacman -S --needed git nodejs npm python python-pip openssh
 git clone https://github.com/cons0le7/Grabber
-cd Grabber
 ```
 
 ---
 
-### **Termux (Android)**
+### **Android (Termux)**
 ```bash
 pkg install git nodejs python openssh
 pip install --upgrade pip
 git clone https://github.com/cons0le7/Grabber
-cd Grabber
 ```
 
 ---
 
 ## 🔐 Set Admin Credentials  
-Run:
+`cd Grabber` then:
 ```bash
 python3 pass.py
 ```
