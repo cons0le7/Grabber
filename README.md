@@ -35,6 +35,9 @@
 ## 📖 Overview  
 Grabber simulates a fake **Nearby Price Finder** website. Its goal is to raise awareness about **how easily sensitive data can be harvested** when permissions are granted to untrusted websites.
 
+User-facing page: 
+![Image](https://github.com/user-attachments/assets/da82d76a-072a-44ae-8a1c-1a10218205be)
+
 ---
 
 ### ✅ What happens when a user visits the page?
