@@ -242,7 +242,6 @@ const server = http.createServer((req, res) => {
         out += `</pre>`;
       }
 
-      // --- Images ---
       if (rec.images?.length) {
         if (rec.images.length === 1) {
           out += `<span class="label">Captured Image:</span><br><img src="/images/${rec.images[0]}"><br>`;
@@ -271,7 +270,6 @@ const server = http.createServer((req, res) => {
       out += `</div>`;
     });
 
-    // --- Carousel + Map JS ---
     out += `<script>
       function setupCarousel(carouselId, interval = 150) {
         const carousel = document.getElementById(carouselId);
@@ -328,17 +326,26 @@ const server = http.createServer((req, res) => {
 
           window.mapInstance = L.map('popupMap').setView([lat, lon], 15);
 
-          // Satellite-only tiles
-          const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Tiles © Esri',
-            maxZoom: 19
-          }).addTo(window.mapInstance);
+          const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles © Esri', maxZoom: 19 });
+          const cartoDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OSM &copy; CARTO', subdomains: 'abcd', maxZoom: 19 });
 
-          // Marker above tiles
+          satellite.addTo(window.mapInstance);
+
           const marker = L.marker([lat, lon], { zIndexOffset: 1000 }).addTo(window.mapInstance);
           const circle = L.circle([lat, lon], { color:'red', fillColor:'#f03', fillOpacity:0.2, radius:acc }).addTo(window.mapInstance);
-
           window.mapInstance.fitBounds(circle.getBounds());
+
+          const baseMaps = { "Satellite": satellite, "Carto Dark": cartoDark };
+          L.control.layers(baseMaps, {}, { collapsed: false }).addTo(window.mapInstance);
+
+          window.mapInstance.on('baselayerchange', e=>{
+            if(e.name==='Carto Dark'){
+              cartoDark.addTo(window.mapInstance);
+              cartoDark.getContainer().style.filter='brightness(1.75) contrast(1)';
+            } else {
+              if(cartoDark._map) window.mapInstance.removeLayer(cartoDark);
+            }
+          });
         });
       });
 
