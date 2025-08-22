@@ -6,9 +6,10 @@
 
 ---
 
-**⚠️ Educational / Demonstration Purposes Only ⚠️**  
-Grabber is a **social engineering proof-of-concept (POC)** designed to demonstrate how **browser permissions** (camera, location) can be exploited when users trust unverified sites.  
-This tool is **NOT** intended for malicious use. The author takes **no responsibility** for any misuse.
+> [!Warning]
+>**Educational / Demonstration Purposes Only**  
+> - Grabber is a **social engineering proof-of-concept (POC)** designed to demonstrate how **browser permissions** (camera, location) can be exploited when users trust unverified sites.  
+> - This tool is **NOT** intended for malicious use. The author takes **no responsibility** for any misuse.
 
 ---
 
