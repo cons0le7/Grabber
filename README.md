@@ -25,7 +25,6 @@ This tool is **NOT** intended for malicious use. The author takes **no responsib
 - [📂 Data Storage](#-data-storage)
 - [📁 Project Structure](#-project-structure)
 - [⚠️ Disclaimer](#-disclaimer)
-- [📜 License](#-license)
 
 ---
 
