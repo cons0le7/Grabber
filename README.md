@@ -156,6 +156,7 @@ python3 pass.py
   *(The panel is **not accessible externally**, only from localhost for security.)*
 - Log in using your credentials.
 - View:
+  
   ✔ Collected IP info with WHOIS  
   ✔ Click coordinates → Opens interactive map  
   ✔ Captured images → Carousel with navigation & autoplay  
