@@ -317,17 +317,27 @@ const server = http.createServer((req, res) => {
       document.body.appendChild(modal);
 
       document.querySelectorAll('.geo-link').forEach(link=>{
-        link.addEventListener('click',e=>{
+        link.addEventListener('click', e=>{
           e.preventDefault();
-          const lat=parseFloat(link.dataset.lat);
-          const lon=parseFloat(link.dataset.lon);
-          const acc=parseFloat(link.dataset.acc);
-          modal.style.display='flex';
+          const lat = parseFloat(link.dataset.lat);
+          const lon = parseFloat(link.dataset.lon);
+          const acc = parseFloat(link.dataset.acc);
+
+          modal.style.display = 'flex';
           if(window.mapInstance) window.mapInstance.remove();
-          window.mapInstance=L.map('popupMap').setView([lat,lon],15);
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors'}).addTo(window.mapInstance);
-          const marker=L.marker([lat,lon]).addTo(window.mapInstance);
-          const circle=L.circle([lat,lon],{color:'red',fillColor:'#f03',fillOpacity:0.2,radius:acc}).addTo(window.mapInstance);
+
+          window.mapInstance = L.map('popupMap').setView([lat, lon], 15);
+
+          // Satellite-only tiles
+          const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles © Esri',
+            maxZoom: 19
+          }).addTo(window.mapInstance);
+
+          // Marker above tiles
+          const marker = L.marker([lat, lon], { zIndexOffset: 1000 }).addTo(window.mapInstance);
+          const circle = L.circle([lat, lon], { color:'red', fillColor:'#f03', fillOpacity:0.2, radius:acc }).addTo(window.mapInstance);
+
           window.mapInstance.fitBounds(circle.getBounds());
         });
       });
