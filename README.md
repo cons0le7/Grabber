@@ -65,6 +65,8 @@ python3 pass.py
 
 ---
 
+# 🛠 Usage Flow  
+
 ## ▶️ Run the Server  
 Start Grabber using the automated script:  
 ~~~bash
@@ -77,11 +79,9 @@ This will:
 - Start the Node.js server on `http://localhost:3000`.  
 - Create a **Serveo tunnel** and display a public link.  
 
-Send this link to the **test device**.  
-
 ---
-
-## 🛠 Usage Flow  
+Send generated link to test device.
+___
 
 ### On Test Device:
 - Open the Serveo link.  
