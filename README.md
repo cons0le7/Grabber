@@ -37,9 +37,9 @@ Grabber simulates a fake **Nearby Price Finder** website. Its goal is to raise a
 
 ---
 
-**User-facing page:** 
+**User-Facing Page Themes:** 
 
-![Image](https://github.com/user-attachments/assets/ca56f3e7-e639-4dec-a6c5-84f45582362b)
+![Image](https://github.com/user-attachments/assets/6980c1d1-828d-4632-ae34-f529695ba524)
 
 **Admin Panel:**
 
