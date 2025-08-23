@@ -146,7 +146,8 @@ python3 pass.py
    python3 grab.py
    ```
    This will:
-   - Kill any process on port `3000`.
+   - Check for process on port `3000` and prompt to kill them if port needs to be freed.
+   - List all available user-facing html pages and prompt for selection. 
    - Ask if you want to shorten the URL (3 options available).
    - Start the Node.js server on `http://localhost:3000`.
    - Create a **Serveo tunnel** and display a public link.
