@@ -47,11 +47,11 @@ while True:
     if not procs:
         break
 
-    print(f"Port {PORT} is in use by the following processes:")
+    print(f"\nPort {PORT} is in use by the following processes: \n")
     for pid, user, cmd in procs:
         print(f"PID {pid} | User: {user} | Command: {cmd}")
 
-    choice = input("Do you want to kill these processes? (y/n): ").strip().lower()
+    choice = input("\n Do you want to kill these processes? (y/n): ").strip().lower()
     if choice == 'y':
         for pid, user, cmd in procs:
             # only kill if owned by current user
@@ -60,52 +60,52 @@ while True:
                     os.kill(pid, signal.SIGTERM)
                     time.sleep(0.5)
                     os.kill(pid, signal.SIGKILL)
-                    print(f"Killed PID {pid} ({cmd})")
+                    print(f"\nKilled PID {pid} ({cmd})")
                 except Exception as e:
-                    print(f"Failed to kill PID {pid}: {e}")
+                    print(f"\nFailed to kill PID {pid}: {e}")
             else:
-                print(f"Skipping PID {pid} ({cmd}) - not owned by you")
+                print(f"\nSkipping PID {pid} ({cmd}) - not owned by you")
         time.sleep(1)
     else:
-        print("Cannot continue while port is in use. Exiting.")
+        print("\nCannot continue while port is in use. Exiting.")
         sys.exit(1)
 
 # --- Prompt user to select a folder from /public ---
 folders = [f for f in os.listdir(PUBLIC_DIR) if os.path.isdir(os.path.join(PUBLIC_DIR, f))]
 if not folders:
-    print("No folders found in /public. Exiting.")
+    print("\nNo folders found in /public. Exiting.")
     sys.exit(1)
 
-print("\nSelect a folder to load its user.html:")
+print("\nSelect user-facing theme:\n")
 for i, folder in enumerate(folders, start=1):
-    print(f"{i} - {folder}")
+    print(f"[{i}] - {folder}")
 
 while True:
-    choice = input("Enter number: ").strip()
+    choice = input("\n   >>> ").strip()
     if choice.isdigit() and 1 <= int(choice) <= len(folders):
         selected_folder = folders[int(choice) - 1]
         source_file = os.path.join(PUBLIC_DIR, selected_folder, "user.html")
         dest_file = os.path.join(PUBLIC_DIR, "user.html")
         if os.path.exists(source_file):
             shutil.copy2(source_file, dest_file)
-            print(f"Loaded {selected_folder}/user.html into /public/user.html")
+            print(f"\nLoaded {selected_folder} into /public/user.html")
         else:
-            print(f"No user.html found in {selected_folder}, continuing with default")
+            print(f"\nNo user.html found in {selected_folder}, continuing with default")
         break
     else:
-        print("Invalid choice, try again.")
+        print("\nInvalid choice, try again.")
 
 # --- Ask user if they want to shorten URL ---
-shorten_choice = input("Shorten URL? (y/n): ").strip().lower()
+shorten_choice = input("\nShorten URL? (y/n): ").strip().lower()
 shorten_url = shorten_choice == 'y'
 
 shortener_choice = None
 if shorten_url:
-    print("\nChoose a URL shortener:")
-    print("1 - is.gd")
-    print("2 - da.gd")
-    print("3 - v.gd")
-    shortener_choice = input("Enter 1, 2, or 3: ").strip()
+    print("\nChoose a URL shortener: \n")
+    print("[1] - is.gd")
+    print("[2] - da.gd")
+    print("[3] - v.gd")
+    shortener_choice = input("\n   >>> ").strip()
     if shortener_choice not in ['1', '2', '3']:
         shortener_choice = '1'
 
