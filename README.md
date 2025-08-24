@@ -111,8 +111,7 @@ git clone https://github.com/cons0le7/Grabber
 
 ### **Android (Termux)**
 ```bash
-pkg install git nodejs python openssh
-pip install --upgrade pip
+pkg install git nodejs python python-pip openssh
 git clone https://github.com/cons0le7/Grabber
 ```
 
