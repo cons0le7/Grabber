@@ -36,6 +36,9 @@
 Grabber simulates a website with a seemingly legitimate use of gps and camera permissions. Its goal is to raise awareness about **how easily sensitive data can be harvested** when permissions are granted to untrusted websites.
 
 ---
+**Terminal Menu:**
+
+![Image](https://github.com/user-attachments/assets/0eee5758-660c-4d97-b1d3-d756b3b5b6ad)
 
 **User-Facing Page Themes:** 
 
