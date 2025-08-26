@@ -24,13 +24,15 @@ WHITE = "\033[97m"
 
 PORT = 3000
 serveo_url = None
+ssh_url_to_print = None
 shutdown_flag = False
+ssh_process = None
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PUBLIC_DIR = os.path.join(BASE_DIR, "public")
 CURRENT_USER = pwd.getpwuid(os.getuid()).pw_name
 
-# ASCII ART (Red)
+# ASCII ART
 print(rf"""{RED}
 _________                            .__                  
 \_   ___ \  ____   ____   __________ |  |   ____   ______ 
@@ -49,18 +51,18 @@ _________                            .__
 # --- Select mode ---
 print(f"\n{CYAN}Select mode:{RESET}\n")
 print(f"{YELLOW}[1]{CYAN} - {GREEN}Local mode{RESET}")
-print(f"{YELLOW}[2]{CYAN} - {GREEN}Public (Serveo) mode{RESET}")
+print(f"{YELLOW}[2]{CYAN} - {GREEN}Public mode{RESET}")
 
 while True:
     mode_choice = input(f"\n{GREEN}>>> {RESET}").strip()
-    if mode_choice in ['1', '2']:
+    if mode_choice in ['1','2']:
         break
     else:
-        print(f"\nInvalid choice, try again.")
+        print("\nInvalid choice, try again.")
 
 local_mode = (mode_choice == '1')
 
-# --- Function to check if port is in use ---
+# --- Check if port is in use ---
 def check_port(port):
     try:
         result = subprocess.run(
@@ -73,16 +75,16 @@ def check_port(port):
         processes = []
         for line in lines:
             parts = re.split(r'\s+', line)
-            if len(parts) >= 2:
+            if len(parts) >= 3:
+                cmd = parts[0]
                 pid = int(parts[1])
                 user = parts[2]
-                cmd = parts[0]
                 processes.append((pid, user, cmd))
         return processes
     except Exception:
         return []
 
-# --- Prompt user to kill processes if port is in use ---
+# --- Kill processes if needed ---
 while True:
     procs = check_port(PORT)
     if not procs:
@@ -92,14 +94,15 @@ while True:
     for pid, user, cmd in procs:
         print(f"{YELLOW}PID {pid}{RESET} | User: {GREEN}{user}{RESET} | Command: {GREEN}{cmd}{RESET}")
 
-    choice = input(f"\n{GREEN}>>> Do you want to kill these processes? (y/n): {RESET}").strip().lower()
+    choice = input(f"\n{GREEN}>>> Kill these processes? (y/n): {RESET}").strip().lower()
     if choice == 'y':
         for pid, user, cmd in procs:
             if user == CURRENT_USER:
                 try:
                     os.kill(pid, signal.SIGTERM)
                     time.sleep(0.5)
-                    os.kill(pid, signal.SIGKILL)
+                    try: os.kill(pid, signal.SIGKILL)
+                    except ProcessLookupError: pass
                     print(f"\n{GREEN}Killed PID {pid} ({cmd}){RESET}")
                 except Exception as e:
                     print(f"\nFailed to kill PID {pid}: {e}")
@@ -110,7 +113,7 @@ while True:
         print("\nCannot continue while port is in use. Exiting.")
         sys.exit(1)
 
-# --- Prompt user to select a folder from /public ---
+# --- Theme selection with skip ---
 folders = [f for f in os.listdir(PUBLIC_DIR) if os.path.isdir(os.path.join(PUBLIC_DIR, f))]
 if not folders:
     print("\nNo folders found in /public. Exiting.")
@@ -119,11 +122,15 @@ if not folders:
 print(f"\n{CYAN}Select user-facing theme:{RESET}\n")
 for i, folder in enumerate(folders, start=1):
     print(f"{YELLOW}[{i}]{CYAN} - {GREEN}{folder}{RESET}")
+print(f"{CYAN}\nPress Enter to skip and keep current user.html{RESET}")
 
 while True:
-    choice = input(f"\n{GREEN}>>> {RESET}").strip()
-    if choice.isdigit() and 1 <= int(choice) <= len(folders):
-        selected_folder = folders[int(choice) - 1]
+    choice = input(f"\n{GREEN}>>> {RESET}").strip().lower()
+    if choice == '':
+        print(f"\n{YELLOW}Skipping theme selection. Keeping current user.html{RESET}")
+        break
+    elif choice.isdigit() and 1 <= int(choice) <= len(folders):
+        selected_folder = folders[int(choice)-1]
         source_file = os.path.join(PUBLIC_DIR, selected_folder, "user.html")
         dest_file = os.path.join(PUBLIC_DIR, "user.html")
         if os.path.exists(source_file):
@@ -133,13 +140,13 @@ while True:
             print(f"\n{YELLOW}No user.html found in {selected_folder}, continuing with default{RESET}")
         break
     else:
-        print(f"\nInvalid choice, try again.")
+        print("\nInvalid choice, try again.")
 
-# --- If public mode, ask about URL shortening ---
+# --- URL shortening ---
 shorten_url = False
 shortener_choice = None
 if not local_mode:
-    shorten_choice = input(f"\n{CYAN}Shorten URL? (y/n):\n\n{GREEN}>>> {RESET}").strip().lower()
+    shorten_choice = input(f"\n{CYAN}Shorten URL? (y/n): {RESET}").strip().lower()
     shorten_url = (shorten_choice == 'y')
 
     if shorten_url:
@@ -148,26 +155,24 @@ if not local_mode:
         print(f"{YELLOW}[2]{CYAN} - {GREEN}da.gd{RESET}")
         print(f"{YELLOW}[3]{CYAN} - {GREEN}v.gd{RESET}")
         shortener_choice = input(f"\n{GREEN}>>> {RESET}").strip()
-        if shortener_choice not in ['1', '2', '3']:
+        if shortener_choice not in ['1','2','3']:
             shortener_choice = '1'
 
-# --- Helper to read lines from a process ---
+# --- Helper functions ---
 def enqueue_output(process, queue):
     for line in iter(process.stdout.readline, ''):
         queue.put(line)
     process.stdout.close()
 
-# --- URL shortening function ---
 def shorten(long_url):
     try:
         if shortener_choice == '1':
-            response = requests.get("https://is.gd/create.php", params={"format": "simple", "url": long_url}, timeout=5)
+            response = requests.get("https://is.gd/create.php", params={"format":"simple","url":long_url}, timeout=5)
         elif shortener_choice == '2':
             response = requests.get(f"https://da.gd/s?url={long_url}", timeout=5)
         elif shortener_choice == '3':
-            response = requests.get("https://v.gd/create.php", params={"format": "simple", "url": long_url}, timeout=5)
-        else:
-            return None
+            response = requests.get("https://v.gd/create.php", params={"format":"simple","url":long_url}, timeout=5)
+        else: return None
         if response.status_code == 200:
             return response.text.strip()
     except requests.RequestException as e:
@@ -177,14 +182,12 @@ def shorten(long_url):
 # --- Graceful shutdown ---
 def shutdown(sig=None, frame=None):
     global shutdown_flag
-    if shutdown_flag:
-        return
+    if shutdown_flag: return
     shutdown_flag = True
     print(f"\n\n{RED}Shutting down...{RESET}")
 
     for proc, name in [(server, "Node server"), (ssh_process if not local_mode else None, "SSH tunnel")]:
-        if proc is None:
-            continue
+        if proc is None: continue
         try:
             proc.terminate()
             proc.wait(timeout=5)
@@ -211,26 +214,66 @@ server = subprocess.Popen(
     bufsize=1
 )
 
-ssh_process = None
+# --- Wait for Node server to listen ---
+timeout = 10
+start = time.time()
+while time.time() - start < timeout:
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        s.connect(("127.0.0.1", PORT))
+        s.close()
+        print(f"\n{GREEN}Node server is listening on port {PORT}{RESET}")
+        break
+    except ConnectionRefusedError:
+        time.sleep(0.2)
+else:
+    print(f"\n{RED}Node server did not start within {timeout} seconds{RESET}")
+    shutdown()
+
+# --- Start SSH tunnel selection ---
 if not local_mode:
+    print(f"\n{CYAN}Select tunneling service:{RESET}\n")
+    print(f"{YELLOW}[1]{CYAN} - {GREEN}serveo.net{RESET}")
+    print(f"{YELLOW}[2]{CYAN} - {GREEN}localhost.run{RESET}")
+
+    while True:
+        tunnel_choice = input(f"\n{GREEN}>>> {RESET}").strip()
+        if tunnel_choice == "1":
+            ssh_cmd = ["ssh", "-o", "StrictHostKeyChecking=no", "-R", f"80:127.0.0.1:{PORT}", "serveo.net"]
+            url_regex = r'https?://[^\s]*\.serveo\.net'
+            break
+        elif tunnel_choice == "2":
+            ssh_cmd = [
+                "ssh", "-o", "StrictHostKeyChecking=no",
+                "-o", "ServerAliveInterval=60",
+                "-R", f"80:127.0.0.1:{PORT}",
+                "nokey@localhost.run"
+            ]
+            url_regex = r'https://[a-z0-9]+\.lhr\.life'
+            break
+        else:
+            print(f"\n{YELLOW}Invalid choice, try again.{RESET}")
+
     ssh_process = subprocess.Popen(
-        ["ssh", "-o", "StrictHostKeyChecking=no", "-R", f"80:localhost:{PORT}", "serveo.net"],
+        ssh_cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
         bufsize=1
     )
 
+# --- Queues & threads ---
 node_queue = Queue()
-ssh_queue = Queue()
-
 threading.Thread(target=enqueue_output, args=(server, node_queue), daemon=True).start()
+
 if not local_mode:
+    ssh_queue = Queue()
     threading.Thread(target=enqueue_output, args=(ssh_process, ssh_queue), daemon=True).start()
 
 # --- Main loop ---
 start_time = time.time()
-timeout = 30
+serveo_timeout = 30
+ssh_output_buffered = []
 
 try:
     while not shutdown_flag:
@@ -241,28 +284,34 @@ try:
         except Empty:
             pass
 
-        # SSH output (if public mode)
+        # SSH output
         if not local_mode:
             try:
                 line = ssh_queue.get(timeout=0.1)
+                ssh_output_buffered.append(line)
                 print(line, end='')
 
                 if serveo_url is None:
-                    match = re.search(r'https?://[^\s]*\.serveo\.net', line)
+                    match = re.search(url_regex, line)
                     if match:
                         serveo_url = match.group(0)
-                        print(f"\n{CYAN}Serveo URL:{RESET} {GREEN}{serveo_url}{RESET}")
+                        ssh_url_to_print = serveo_url  # Store to print later
 
-                        if shorten_url:
-                            short_url = shorten(serveo_url)
-                            if short_url:
-                                print(f"\n{CYAN}Shortened URL:{RESET} {GREEN}{short_url}{RESET}\n")
             except Empty:
                 pass
 
-        # Timeout for Serveo URL detection
-        if not local_mode and serveo_url is None and (time.time() - start_time) > timeout:
-            print(f"\n{YELLOW}Could not find Serveo URL within timeout.{RESET}")
+        # Once the banner is done, print the stored tunnel URL
+        if ssh_url_to_print:
+            print(f"\n{CYAN}Tunnel URL:{RESET} {MAGENTA}{ssh_url_to_print}{RESET}")
+            if shorten_url:
+                short_url_val = shorten(ssh_url_to_print)
+                if short_url_val:
+                    print(f"\n{CYAN}Shortened URL:{RESET} {MAGENTA}{short_url_val}{RESET}\n")
+            ssh_url_to_print = None  # Only print once
+
+        # Timeout for Serveo URL
+        if not local_mode and serveo_url is None and (time.time() - start_time) > serveo_timeout:
+            print(f"\n{YELLOW}Could not find tunnel URL within timeout.{RESET}")
             serveo_url = "timeout"
 
         # Exit if both processes finished
