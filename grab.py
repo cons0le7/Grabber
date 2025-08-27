@@ -222,6 +222,7 @@ while time.time() - start < timeout:
     try:
         s.connect(("127.0.0.1", PORT))
         s.close()
+        print(f"\n\n{CYAN}- STARTING LOCAL SERVER -{MAGENTA}\n\nCtrl+C to shutdown.{RESET}")
         print(f"\n{GREEN}Node server is listening on port {PORT}{RESET}")
         break
     except ConnectionRefusedError:
@@ -302,11 +303,12 @@ try:
 
         # Once the banner is done, print the stored tunnel URL
         if ssh_url_to_print:
-            print(f"\n{CYAN}Tunnel URL:{RESET} {MAGENTA}{ssh_url_to_print}{RESET}")
+            print(f"\n\n\n\n\n\n\n{CYAN}- PUBLIC TUNNEL IS ACTIVE -{MAGENTA}\n\nCtrl+C twice to shutdown.{RESET}")
+            print(f"\n\n\n\n\n\n\n{CYAN}Tunnel URL:{RESET} {MAGENTA}{ssh_url_to_print}{RESET}\n\n\n\n\n\n\n")
             if shorten_url:
                 short_url_val = shorten(ssh_url_to_print)
                 if short_url_val:
-                    print(f"\n{CYAN}Shortened URL:{RESET} {MAGENTA}{short_url_val}{RESET}\n")
+                    print(f"\n{CYAN}Shortened URL:{RESET} {MAGENTA}{short_url_val}{RESET}\n\n\n\n\n\n\n")
             ssh_url_to_print = None  # Only print once
 
         # Timeout for Serveo URL
