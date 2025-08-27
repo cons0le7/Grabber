@@ -38,7 +38,7 @@ Grabber simulates a website with a seemingly legitimate use of gps and camera pe
 ---
 **Terminal Menu:**
 
-![Image](https://github.com/user-attachments/assets/c7769643-55c6-4ade-9059-821d2b248029)
+![Image](https://github.com/user-attachments/assets/eba8c347-2822-466e-9744-1bc187e17dbf)
 
 **User-Facing Page Themes:** 
 
