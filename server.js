@@ -3,9 +3,8 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const net = require('net');
-const { exec } = require('child_process');
-
 const PORT = 3000;
+const whois = require('whois');
 
 // --- Directories ---
 const PUBLIC_DIR = path.join(__dirname, 'public');
@@ -65,12 +64,44 @@ function isPublicIP(ip) {
   return false;
 }
 
+// --- Determine which RIR to query based on IP ---
+function getRIR(ip) {
+  if (net.isIP(ip) === 4) {
+    const octets = ip.split('.').map(Number);
+    if (octets[0] >= 3 && octets[0] <= 71) return 'arin';
+    if (octets[0] >= 72 && octets[0] <= 99) return 'ripe';
+    if (octets[0] >= 100 && octets[0] <= 126) return 'apnic';
+    if (octets[0] >= 128 && octets[0] <= 191) return 'lacnic';
+    return 'afrinic';
+  } else if (net.isIP(ip) === 6) {
+    return 'arin';
+  }
+  return null;
+}
+
+// --- RIR server mapping ---
+const RIR_SERVERS = {
+  arin: 'whois.arin.net',
+  ripe: 'whois.ripe.net',
+  apnic: 'whois.apnic.net',
+  lacnic: 'whois.lacnic.net',
+  afrinic: 'whois.afrinic.net'
+};
+
 function runWhois(ip, cb) {
-  exec(`whois "${ip}"`, { timeout: 10000, maxBuffer: 1024 * 1024 }, (err, stdout) => {
-    cb(err ? `WHOIS error: ${err.message}` : stdout);
+  if (!net.isIP(ip)) return cb(`Invalid IP: ${ip}`);
+
+  const rir = getRIR(ip);
+  const server = RIR_SERVERS[rir];
+
+  whois.lookup(ip, { server }, (err, data) => {
+    if (err) return cb(`WHOIS error: ${err.message}`);
+    cb(data || 'No WHOIS data found');
   });
 }
 
+
+// --- IP label for HTML ---
 function ipLabel(ip, type) {
   const version = net.isIP(ip) === 4 ? 'IPv4' : 'IPv6';
   if (isPublicIP(ip)) {
@@ -297,7 +328,6 @@ const server = http.createServer((req, res) => {
       }
       document.querySelectorAll('.carousel').forEach(c=>setupCarousel(c.id,150));
 
-      // Map modal
       const modal=document.createElement('div');
       modal.id='mapModal';
       modal.style.cssText='display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:1000;justify-content:center;align-items:center;';
