@@ -128,8 +128,15 @@ git clone https://github.com/cons0le7/Grabber
 
 ---
 
+## ⌨️ Initialize NPM 
+```bash
+cd Grabber
+npm init -y
+npm install whois
+
+```
+
 ## 🔐 Set Admin Credentials  
-`cd Grabber` then:
 ```bash
 python3 pass.py
 ```
