@@ -128,7 +128,7 @@ git clone https://github.com/cons0le7/Grabber
 
 ---
 
-## ⌨️ Initialize NPM 
+## ⌨️ Install Node Packages
 ```bash
 cd Grabber
 npm install whois whois-json underscore
