@@ -132,7 +132,7 @@ git clone https://github.com/cons0le7/Grabber
 ```bash
 cd Grabber
 npm init -y
-npm install whois-json
+npm install whois whois-json underscore
 
 ```
 
