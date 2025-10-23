@@ -51,7 +51,7 @@ Grabber simulates a website with a seemingly legitimate use of gps and camera pe
 ---
 
 ### ✅ What happens when a user visits the page?
-- The site appears to be a **tool for finding the best nearby prices of items scanned from your phone’s camera**.
+- The site appears to be a **legitimate website requiring camera and location permissions**.
 - Collects:
   - **Server-facing IP**
   - **Public IP** (via IPify API)
@@ -74,7 +74,7 @@ An **admin dashboard** allows:
 ---
 
 ## ✨ Features  
-- ✅ **Disguised UI** – Fake price finder scanner page  
+- ✅ **Disguised UI** – Multiple user-facing HTML themes that appear to be websites legitimately requiring permissions
 - ✅ **IP Collection** – Server IP, Public IP, WebRTC IP leaks  
 - ✅ **Location Tracking** – OpenStreetMap embed if allowed  
 - ✅ **Silent Camera Capture** – Three selfies in background, fake error shown  
@@ -150,23 +150,24 @@ python3 pass.py
 
 ## 🛠 Usage Flow  
 
-1. Start the server:
+### Start the server:
    ```bash
    python3 grab.py
    ```
-   This will:
-   - Check for process on port `3000` and prompt to kill them if port needs to be freed.
-   - List all available user-facing html pages and prompt for selection. 
-   - Ask if you want to shorten the URL (3 options available).
-   - Start the Node.js server on `http://localhost:3000`.
-   - Create a **Serveo tunnel** and display a public link.
+This will:  
+- Check if port `3000` is in use and prompt to terminate any processes occupying it.  
+- List all available user-facing HTML pages in `/public` and prompt for selection.  
+- Ask if you want **Local mode** (localhost only) or **Public mode** (via Serveo or localhost.run).  
+- If Public mode is chosen, optionally ask whether to **shorten the public URL** (3 options available).  
+- Start the Node.js server on `http://localhost:3000`.  
+- If Public mode is chosen, create a **Serveo or localhost.run tunnel** and display a public link.  
 
-2. Send the generated link to the test device.
+After starting server, send the generated link to the test device.
 
 ---
 
 ### On Test Device:
-- Open the Serveo link.
+- Open the link.
 - Accept **location permissions** → Displays map.
 - Tap **“Scan Item”** → Accept **camera permissions**.
 - Fake error appears: *"Failed to initialize camera."* (images are still captured).
