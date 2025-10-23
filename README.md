@@ -1,6 +1,6 @@
 # Grabber  
 
-![Node.js](https://img.shields.io/badge/Node.js-16%2B-green)
+![Node.js](https://img.shields.io/badge/Node.js-14%2B-green)
 ![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
@@ -88,7 +88,7 @@ An **admin dashboard** allows:
 ## ⚡ Installation  
 
 ### **Requirements**
-- Node.js **v16+**
+- Node.js **v14+**
 - Python **3.8+**
 - npm
 - pip
